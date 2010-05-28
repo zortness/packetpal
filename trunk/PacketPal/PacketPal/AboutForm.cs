@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using Tamir.IPLib;
+using SharpPcap;
 using System.Collections;
 using Kopf.PacketPal.Plugins;
 using Kopf.PacketPal.PacketEditors;
@@ -29,7 +29,7 @@ namespace Kopf.PacketPal
             labelLibVersion.Text = Kopf.PacketPal.Version.getVersion();
 
             // get sharppcap version
-            labelSharpVersion.Text = Tamir.IPLib.Version.GetVersionString();
+            labelSharpVersion.Text = SharpPcap.Version.VersionString;
 
             // get plugin list with info
             string pluginList = "";

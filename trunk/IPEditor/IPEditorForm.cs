@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using PacketDotNet;
 
 namespace Kopf.PacketPal.PacketEditors
 {
@@ -19,8 +20,8 @@ namespace Kopf.PacketPal.PacketEditors
         private int myFlags; // 3 bits
         private int myFragmentOffset; // 13 bits
         private int myTTL; // 8 bits
-        private int myProtocol; // 8 bits
-        private int myChecksum; // 16 bits
+        private string myProtocol; // 8 bits
+        private string myChecksum; // 16 bits
         private string mySource; // 32 bits
         private string myDest; // 32 bits
         private string myData; // 2^16 - 20 bytes max
@@ -35,7 +36,7 @@ namespace Kopf.PacketPal.PacketEditors
          * Constructor
          */
         public IPEditorForm(IPEditor parent, int version, int headerLength, int tos, int length, int id, int flags,
-            int fragmentOffset, int ttl, int protocol, int checksum, string source, string destination, string data)
+            int fragmentOffset, int ttl, string protocol, string checksum, string source, string destination, string data)
         {
             InitializeComponent();
 
@@ -153,7 +154,7 @@ namespace Kopf.PacketPal.PacketEditors
         /*
          * Get IP Protocol.
          */
-        public int getProtocol()
+        public string getProtocol()
         {
             return myProtocol;
         }
@@ -161,7 +162,7 @@ namespace Kopf.PacketPal.PacketEditors
         /*
          * Get Header Checksum.
          */
-        public int getChecksum()
+        public string getChecksum()
         {
             return myChecksum;
         }
@@ -457,7 +458,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyProtocol(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyProtocol(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -492,7 +493,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyChecksum(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyChecksum(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -617,15 +618,8 @@ namespace Kopf.PacketPal.PacketEditors
             }
             myFragmentOffset = int.Parse(txtFragOffset.Text);
             myTTL = int.Parse(txtTTL.Text);
-            myProtocol = int.Parse(txtProtocol.Text);
-            if (txtChecksum.Text == "")
-            {
-                myChecksum = 0;
-            }
-            else
-            {
-                myChecksum = int.Parse(txtChecksum.Text);
-            }
+            myProtocol = txtProtocol.Text;
+            myChecksum = txtChecksum.Text;
             mySource = txtSource.Text;
             myDest = txtDestination.Text;
 

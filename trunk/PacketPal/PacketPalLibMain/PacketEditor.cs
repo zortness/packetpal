@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Tamir.IPLib.Packets;
+using PacketDotNet;
 using Kopf.PacketPal.TCPIPLayers;
 
 namespace Kopf.PacketPal.PacketEditors
@@ -104,5 +104,9 @@ namespace Kopf.PacketPal.PacketEditors
          */
         abstract public Packet compile(object[] fields);
 
+        /*
+         * Rebuild a Pcap Packet based on the parameters.
+         */
+        abstract public Packet compile(object[] fields, Packet packet);
     }
 }

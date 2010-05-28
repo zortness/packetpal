@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Tamir.IPLib.Packets;
-using Tamir.IPLib.Util;
-using Tamir.IPLib.Packets.Util;
 using Kopf.PacketPal.Util;
 using Kopf.PacketPal.TCPIPLayers;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using SharpPcap;
+using PacketDotNet;
 
 namespace Kopf.PacketPal.PacketEditors
 {
@@ -35,7 +34,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override string getName()
         {
-            return "ICMP Packet Editor";
+            return "ICMPv4 Packet Editor";
         }
 
         /*
@@ -43,7 +42,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override string getVersion()
         {
-            return "1.0";
+            return "1.1";
         }
 
         /*
@@ -67,7 +66,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override string getEditAs()
         {
-            return "ICMP Packet";
+            return "ICMPv4 Packet";
         }
 
         /*
@@ -75,11 +74,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override bool canHandle(Packet packet)
         {
-            if (packet is ICMPPacket)
-            {
-                return true;
-            }
-            return false;
+            return (packet is ICMPv4Packet);
         }
 
         /*
@@ -95,20 +90,18 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override Packet guiEdit(Packet packet)
         {
-            if (!(packet is ICMPPacket))
+            if (!(packet is ICMPv4Packet))
             {
-                throw new EditorInvalidPacket("Not a valid ICMP Packet!");
+                throw new EditorInvalidPacket("Not a valid ICMPv4 Packet!");
             }
 
-            int myType = ((ICMPPacket)packet).MessageType;
-            int myCode = ((ICMPPacket)packet).MessageCode;
-            int myChecksum = ((ICMPPacket)packet).ICMPChecksum;
+            object[] fields = explode(packet);
 
             ICMPEditorForm form = new ICMPEditorForm(this,
-                ((ICMPPacket)packet).MessageType,
-                ((ICMPPacket)packet).MessageCode,
-                ((ICMPPacket)packet).ICMPChecksum,
-                HexEncoder.ToString(((ICMPPacket)packet).ICMPData)
+                (string)fields[1],
+                (string)fields[2],
+                (string)fields[3],
+                (string)fields[4]
             );
 
             // show the form, wait for it to close
@@ -116,19 +109,15 @@ namespace Kopf.PacketPal.PacketEditors
             // if SAVE was clicked
             if (form.DialogResult == DialogResult.OK)
             {
-                ((ICMPPacket)packet).MessageType = form.getType();
-                ((ICMPPacket)packet).MessageCode = form.getCode();
-                ((ICMPPacket)packet).ICMPChecksum = form.getChecksum();
-                if (form.reCompile)
+                fields[1] = form.getType();
+                fields[2] = form.getCode();
+                fields[3] = form.getChecksum();
+                fields[4] = form.getData();
+                packet = compile(fields, packet);
+
+                if (form.reCompute)
                 {
-                    object[] temp = new object[6];
-                    temp[0] = ((ICMPPacket)packet).EthernetHeader;
-                    temp[1] = ((ICMPPacket)packet).IPHeader;
-                    temp[2] = ((ICMPPacket)packet).MessageType;
-                    temp[3] = ((ICMPPacket)packet).MessageCode;
-                    temp[4] = ((ICMPPacket)packet).ICMPChecksum;
-                    temp[5] = ((ICMPPacket)packet).ICMPData;
-                    packet = compile(temp);
+                    packet.UpdateCalculatedValues();
                 }
 
                 // destroy the form
@@ -190,9 +179,7 @@ namespace Kopf.PacketPal.PacketEditors
             temp[40] = 0x11;
             temp[41] = 0x00;
 
-            Packet packet = PacketFactory.dataToPacket(LinkLayers_Fields.IEEE802, temp);
-
-            // just use the other function now that we have a valid packet
+            Packet packet = new ICMPv4Packet(temp, 0);
             return guiEdit(packet);
         }
 
@@ -201,120 +188,98 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override object[] explode(Packet packet)
         {
-            if (!(packet is ICMPPacket))
+            if (!(packet is ICMPv4Packet))
             {
                 throw new EditorInvalidPacket("Not a valid ICMP Packet!");
             }
+            ICMPv4Packet icmpPacket = (ICMPv4Packet)packet;
 
             /*
              * Split into fields:
-             *  - ethernet header
-             *  - ip header
+             *  - header
              *  - type
              *  - code
              *  - checksum
              *  - data
              */
 
-            object[] ret = new object[6];
-            ret[0] = ((ICMPPacket)packet).EthernetHeader;
-            ret[1] = ((ICMPPacket)packet).IPHeader;
-            ret[2] = ((ICMPPacket)packet).MessageType;
-            ret[3] = ((ICMPPacket)packet).MessageCode;
-            ret[4] = ((ICMPPacket)packet).ICMPChecksum;
-            ret[5] = ((ICMPPacket)packet).ICMPData;
+            object[] ret = new object[5];
+            ret[0] = HexEncoder.ToString(icmpPacket.Header);
+            ret[1] = HexEncoder.ToString(ByteUtil.getBytes(icmpPacket.Bytes, ICMPv4Fields.TypeCodePosition, 1));
+            ret[2] = HexEncoder.ToString(ByteUtil.getBytes(icmpPacket.Bytes, ICMPv4Fields.TypeCodePosition + 1, 1));
+            ret[3] = HexEncoder.ToString(ByteUtil.getBytes(icmpPacket.Bytes, ICMPv4Fields.ChecksumPosition, ICMPv4Fields.ChecksumLength));
+            ret[4] = HexEncoder.ToString(icmpPacket.Data);
 
             return ret;
+        }
+
+        public override Packet compile(object[] fields)
+        {
+            return compile(fields, null);
         }
 
         /*
          * Create a new ICMPPacket based on provided fields.
          */
-        public override Packet compile(object[] fields)
+        public override Packet compile(object[] fields, Packet packet)
         {
             // make sure the array is properly constructed
-            if (fields.Length == 6)
+            if (fields.Length == 5)
             {
-                if (!(fields[0] is byte[]) || !(fields[1] is byte[]) ||
-                !(fields[2] is int) || !(fields[3] is int) ||
-                !(fields[4] is int) || !(fields[5] is string))
+                if (!(fields[0] is string) || !(fields[1] is string) ||
+                !(fields[2] is string) || !(fields[3] is string) ||
+                !(fields[4] is string))
                 {
-                    throw new EditorInvalidField("One or more invalid fields specified. Expecting 2 byte arrays, 3 integers, and 1 string.");
+                    throw new EditorInvalidField("One or more invalid fields specified. Expecting 5 strings.");
                 }
 
-                if (!verifyMessageType((int)fields[2]))
+                if (!verifyMessageType((string)fields[1]))
                 {
-                    throw new EditorInvalidField("Invalid ICMP Message Type. Expecting an integer from 0 to 255.");
+                    throw new EditorInvalidField("Invalid ICMP Message Type. Expecting a hexadecimal string.");
                 }
-                if (!verifyMessageCode((int)fields[3]))
+                if (!verifyMessageCode((string)fields[2]))
                 {
-                    throw new EditorInvalidField("Invalid ICMP Message Code. Expecting an integer from 0 to 255.");
+                    throw new EditorInvalidField("Invalid ICMP Message Code. Expecting a hexadecimal string.");
                 }
-                if (!verifyChecksum((int)fields[4]))
+                if (!verifyChecksum((string)fields[3]))
                 {
-                    throw new EditorInvalidField("Invalid ICMP Checksum. Expecting an integer from 0 to 65535.");
+                    throw new EditorInvalidField("Invalid ICMP Checksum. Expecting a hexadecimal string.");
                 }
-                if (!verifyData((string)fields[5]))
+                if (!verifyData((string)fields[4]))
                 {
                     throw new EditorInvalidField("Invalid ICMP Data. Expecting a hexadecimal string.");
                 }
 
                 int discarded;
 
-                // convert type to byte[]
-                byte[] myType = HexEncoder.GetBytes(padHex(((int)fields[2]).ToString("x"),2), out discarded);
-                // convert code to byte[]
-                byte[] myCode = HexEncoder.GetBytes(padHex(((int)fields[3]).ToString("x"), 2), out discarded);
-                // convert checksum to byte[]
-                byte[] myCheck = HexEncoder.GetBytes(padHex(((int)fields[4]).ToString("x"), 4), out discarded);
-                // convert data to byte[]
-                byte[] myData = HexEncoder.GetBytes((string)fields[5], out discarded);
+                byte[] myType = HexEncoder.GetBytes((string)fields[1], out discarded);
+                byte[] myCode = HexEncoder.GetBytes((string)fields[2], out discarded);
+                byte[] myCheck = HexEncoder.GetBytes((string)fields[3], out discarded);
+                byte[] myData = HexEncoder.GetBytes((string)fields[4], out discarded);
 
-                
-                // container for everything
-                byte[] temp = new byte[
-                    ((byte[])fields[0]).Length + ((byte[])fields[1]).Length +
-                    8 + myData.Length];
+                byte[] packetBytes = ByteUtil.combineBytes(myType, myCode, myCheck, myData);
 
-                // copy our bytes over to the temp array for parsing
-                ((byte[])fields[0]).CopyTo(temp, 0);
-                ((byte[])fields[1]).CopyTo(temp, ((byte[])fields[0]).Length);
-                myType.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length);
-                myCode.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 2);
-                myCheck.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 4);
-                myData.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 8);
+                if (packet == null)
+                {
+                    packet = new ICMPv4Packet(packetBytes, 0);
+                }
+                else
+                {
+                    Packet parent = packet.ParentPacket;
+                    packet = new ICMPv4Packet(packetBytes, 0);
+                    packet.ParentPacket = parent;
+                }
 
-                
-                // use the packet factory to compile
-                // this will allow something possibly higher than an EthernetPacket to be constructed
-                return PacketFactory.dataToPacket(
-                    LinkLayers_Fields.IEEE802,
-                    temp
-                );
+                return packet;
             }
             else
             {
                 throw new EditorInvalidField("Invalid field count to construct an ICMP Packet.");
             }
-
         }
 
         #endregion required_methods
 
-
-
-        /*
-         * Pad a hex string with leading zeroes.
-         */
-        public string padHex(string inString, int minLength)
-        {
-            while (inString.Length < minLength)
-            {
-                inString = "0" + inString;
-            }
-
-            return inString;
-        }
 
         /**
          * field verification
@@ -323,37 +288,25 @@ namespace Kopf.PacketPal.PacketEditors
         /*
          * type
          */
-        public bool verifyMessageType(int type)
+        public bool verifyMessageType(string type)
         {
-            if (type >= 0 && type < 256)
-            {
-                return true;
-            }
-            return false;
+            return (type.Length == 1 && HexEncoder.InHexFormat(type));
         }
 
         /*
         * code
         */
-        public bool verifyMessageCode(int code)
+        public bool verifyMessageCode(string code)
         {
-            if (code >= 0 && code < 256)
-            {
-                return true;
-            }
-            return false;
+            return (code.Length == 1 && HexEncoder.InHexFormat(code));
         }
 
         /*
         * checksum
         */
-        public bool verifyChecksum(int checksum)
+        public bool verifyChecksum(string checksum)
         {
-            if (checksum >= 0 && checksum < 65536)
-            {
-                return true;
-            }
-            return false;
+            return (checksum.Length == 1 && HexEncoder.InHexFormat(checksum));
         }
 
         /*
@@ -361,14 +314,7 @@ namespace Kopf.PacketPal.PacketEditors
         */
         public bool verifyData(string data)
         {
-            Regex test1 = new Regex("[0-9a-fA-F]{0,2960}");
-            if (test1.IsMatch(data))
-            {
-                // make sure there's no characters that shouldn't be in the string
-                Regex test2 = new Regex(".*[^0-9a-fA-F].*");
-                return (!test2.IsMatch(data));
-            }
-            return false;
+            return (HexEncoder.InHexFormat(data));
         }
         
     }

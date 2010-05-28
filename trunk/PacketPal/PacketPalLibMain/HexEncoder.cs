@@ -81,9 +81,12 @@ namespace Kopf.PacketPal.Util
         public static string ToString(byte[] bytes)
         {
             string hexString = "";
-            for (int i = 0; i < bytes.Length; i++)
+            if (bytes != null)
             {
-                hexString += bytes[i].ToString("X2");
+                for (int i = 0; i < bytes.Length; i++)
+                {
+                    hexString += bytes[i].ToString("X2");
+                }
             }
             return hexString;
         }
@@ -136,5 +139,33 @@ namespace Kopf.PacketPal.Util
             return newByte;
         }
 
+        public static string PrePadHexString(string inString, int minLength)
+        {
+            while (inString.Length < minLength)
+            {
+                inString = "0" + inString;
+            }
+            return inString;
+        }
+
+        public static string ToString(int number)
+        {
+            return number.ToString("X");
+        }
+
+        public static string ToString(int number, int length)
+        {
+            return number.ToString("X" + length.ToString());
+        }
+
+        public static byte[] GetBytes(int number, out int discarded)
+        {
+            return GetBytes(ToString(number), out discarded);
+        }
+
+        public static byte[] GetBytes(int number, int length, out int discarded)
+        {
+            return GetBytes(ToString(number, length), out discarded);
+        }
     }
 }

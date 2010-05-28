@@ -1,0 +1,38 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" ctype="Workspace" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="../IPEditor/IPEditorForm.Designer.cs" ctype="Workbench">
+    <Files>
+      <File FileName="../IPEditor/IPEditor.cs" Line="1" Column="1" />
+      <File FileName="../IPEditor/IPEditorForm.cs" Line="81" Column="44" />
+      <File FileName="PacketPalLibMain/Version.cs" Line="1" Column="1" />
+      <File FileName="../IPEditor/IPEditorForm.Designer.cs" Line="448" Column="54" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State expanded="True">
+          <Node name="EthernetEditor" expanded="True" />
+          <Node name="IPEditor" expanded="True">
+            <Option id="ShowVersionControlOverlays" value="True" />
+            <Option id="ShowAllFiles" value="False" />
+            <Node name="References" expanded="True" />
+            <Node name="IPEditorForm.cs" expanded="True">
+              <Node name="IPEditorForm.Designer.cs" selected="True" />
+            </Node>
+          </Node>
+          <Node name="PacketPal" expanded="True">
+            <Node name="References" expanded="True">
+              <Node name="System.Deployment" expanded="True" />
+            </Node>
+          </Node>
+          <Node name="PacketPalLibMain" expanded="True">
+            <Node name="References" expanded="True" />
+            <Node name="Properties" expanded="True" />
+          </Node>
+        </State>
+      </Pad>
+      <Pad Id="ClassPad">
+        <State expanded="True" selected="True" />
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+</Properties>

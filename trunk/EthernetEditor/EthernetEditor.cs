@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Tamir.IPLib.Packets;
-using Tamir.IPLib.Util;
-using Tamir.IPLib.Packets.Util;
 using Kopf.PacketPal.Util;
 using Kopf.PacketPal.TCPIPLayers;
 using System.Windows.Forms;
-using System.Text.RegularExpressions;
+using PacketDotNet;
 
 namespace Kopf.PacketPal.PacketEditors
 {
@@ -46,7 +43,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override string getVersion()
         {
-            return "1.0";
+            return "1.1";
         }
 
         /*
@@ -78,11 +75,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override bool canHandle(Packet packet)
         {
-            if (packet is EthernetPacket)
-            {
-                return true;
-            }
-            return false;
+            return (packet is EthernetPacket) ;
         }
 
         /*
@@ -102,19 +95,13 @@ namespace Kopf.PacketPal.PacketEditors
             {
                 throw new EditorInvalidPacket("Not a valid Ethernet Packet!");
             }
+            object[] fields = explode(packet);
 
-            //MessageBox.Show(HexEncoder.ToString(((EthernetPacket)packet).EthernetData));
-
-            // Convert original data to the correct formats for the editing form,
-            // in this case: hexadecimal strings, then send to the form.
             EthernetEditorForm form = new EthernetEditorForm(this,
-                ((EthernetPacket)packet).DestinationHwAddress,
-                ((EthernetPacket)packet).SourceHwAddress,
-                padHex(System.Convert.ToString(
-                    ((EthernetPacket)packet).EthernetProtocol, 16)
-                    ,4),
-                HexEncoder.ToString(((EthernetPacket)packet).EthernetData)
-                //Tamir.IPLib.Util.Convert.BytesToHex(((EthernetPacket)packet).EthernetData)
+                (string)fields[0],
+                (string)fields[1],
+                (string)fields[2],
+                (string)fields[3]
             );
 
             // show the form, wait for it to close
@@ -122,27 +109,11 @@ namespace Kopf.PacketPal.PacketEditors
             // if SAVE was clicked
             if (form.DialogResult == DialogResult.OK)
             {
-                // if the payload was altered, we need to recompile the packet from scratch
-                if (form.reCompile)
-                {
-                    object[] fields = new object[4];
-                    fields[0] = form.getDest();
-                    fields[1] = form.getSource();
-                    fields[2] = form.getProtocol();
-                    fields[3] = form.getPayload();
-
-                    // compile the hex strings into a new packet
-                    packet = compile(fields);
-                }
-                else
-                {
-                    // the payload wasn't changed
-                    // modify the easy fields
-                    ((EthernetPacket)packet).DestinationHwAddress = form.getDest();
-                    ((EthernetPacket)packet).SourceHwAddress = form.getSource();
-                    ((EthernetPacket)packet).EthernetProtocol = int.Parse(form.getProtocol(),
-                        System.Globalization.NumberStyles.HexNumber);
-                }
+                fields[0] = form.getDest();
+                fields[1] = form.getSource();
+                fields[2] = form.getProtocol();
+                fields[3] = form.getPayload();
+                packet = compile(fields, packet);
 
                 // destroy the form
                 form.Dispose();
@@ -159,27 +130,10 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override Packet guiEdit()
         {
-            
-            // fill up minimum amount of bytes
-            // 64 bytes minimum, 4 for CRC
-            byte[] temp = new byte[60];
-            for (int x = 0; x < 60; x++)
-            {
-                temp[x] = 0xFF;
-            }
-            //Random myRand = new Random();
-            //myRand.NextBytes(temp);
-            // make new smallest possible ethernet packet
-            //EthernetPacket packet = new EthernetPacket(temp.Length, temp);
-
-            // compute CRC
-            //CRCTool crccalc = new CRCTool();
-            //ulong crc = crccalc.crcbitbybitfast(temp);
-            /** convert ulong to bytes[] ?? **/
-
-            Packet packet = PacketFactory.dataToPacket(LinkLayers_Fields.IEEE802, temp);
-
-            // just use the other function now that we have a valid packet
+            Packet packet = new EthernetPacket(
+                new System.Net.NetworkInformation.PhysicalAddress(new byte[6]),
+                new System.Net.NetworkInformation.PhysicalAddress(new byte[6]),
+                EthernetPacketType.None);
             return guiEdit(packet);
         }
 
@@ -200,23 +154,26 @@ namespace Kopf.PacketPal.PacketEditors
              *  - protocol
              *  - payload
              */
+            byte[] type = ByteUtil.getBytes(((EthernetPacket)packet).Bytes, EthernetFields.TypePosition, EthernetFields.TypeLength);
+
+            byte[] payload = packet.PayloadData;
+            if (payload == null && packet.PayloadPacket != null)
+            {
+                payload = packet.PayloadPacket.Bytes;
+            }
 
             object[] ret = new object[4];
-
-            ret[0] = ((EthernetPacket)packet).DestinationHwAddress;
-            ret[1] = ((EthernetPacket)packet).SourceHwAddress;
-            ret[2] = padHex(System.Convert.ToString(
-                ((EthernetPacket)packet).EthernetProtocol, 16),4);
-            ret[3] = HexEncoder.ToString(((EthernetPacket)packet).EthernetData);
-            //Tamir.IPLib.Util.Convert.BytesToHex(((EthernetPacket)packet).EthernetData);
-
+            ret[0] = HexEncoder.ToString(((EthernetPacket)packet).DestinationHwAddress.GetAddressBytes());
+            ret[1] = HexEncoder.ToString(((EthernetPacket)packet).SourceHwAddress.GetAddressBytes());
+            ret[2] = HexEncoder.ToString(type);
+            ret[3] = HexEncoder.ToString(payload);
             return ret;
         }
 
         /*
          * Create a new EthernetPacket based on provided fields.
          */
-        public override Packet compile(object[] fields)
+        public override Packet compile(object[] fields, Packet packet)
         {
             /*
              * Expecting 4 strings:
@@ -237,39 +194,38 @@ namespace Kopf.PacketPal.PacketEditors
             }
             if (!verifyMac((string)fields[0]) || !verifyMac((string)fields[1]))
             {
-                throw new EditorInvalidField("Invalid MAC address. Expecting a hexadecimal string of format FF:FF:FF:FF:FF:FF.");
-            }
-            if (!verifyProtocol((string)fields[2]))
-            {
-                throw new EditorInvalidField("Invalid protocol type. Expecting a hexadecimal string of format FFFF.");
+                throw new EditorInvalidField("Invalid MAC address. Expecting a hexadecimal string of format FFFFFFFFFFFF.");
             }
             if (!verifyPayload((string)fields[3]))
             {
                 throw new EditorInvalidField("Invalid payload. Expecting a hexadecimal string of length 92 to 3000.");
             }
-            // use the packet factory to compile
-            // this will allow something possibly higher than an EthernetPacket to be constructed
-            int discarded;
-            return PacketFactory.dataToPacket(
-                LinkLayers_Fields.IEEE802,
-                HexEncoder.GetBytes(
-                    ((string)fields[0]).Replace(":","") +
-                    ((string)fields[1]).Replace(":","") +
-                    (string)fields[2] +
-                    (string)fields[3],
-                    out discarded
-                )
-            );
-            /*
-             * Tamir.IPLib.Util.Convert.GetBytes(
-                    ((string)fields[0]).Replace(":","") +
-                    ((string)fields[1]).Replace(":","") +
-                    (string)fields[2] +
-                    (string)fields[3]
-                )
-             *
-             */
-            
+
+            int discarded = 0;
+            byte[] destAddr = HexEncoder.GetBytes((string)fields[0], out discarded);
+            byte[] srcAddr = HexEncoder.GetBytes((string)fields[1], out discarded);
+            byte[] type = HexEncoder.GetBytes((string)fields[2], out discarded);
+            byte[] payload = HexEncoder.GetBytes((string)fields[3], out discarded);
+
+            byte[] packetBytes = ByteUtil.combineBytes(destAddr, srcAddr, type, payload);
+
+            if (packet == null)
+            {
+                packet = new EthernetPacket(packetBytes, 0);
+            }
+            else
+            {
+                Packet parent = packet.ParentPacket;
+                packet = new EthernetPacket(packetBytes, 0);
+                packet.ParentPacket = parent;
+            }
+
+            return packet;
+        }
+
+        public override Packet compile(object[] fields)
+        {
+            return compile(fields, null);
         }
 
         #endregion required_methods
@@ -279,8 +235,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public bool verifyMac(string mac)
         {
-            Regex test = new Regex("([0-9a-fA-F]{2}\\:){5}([0-9a-fA-F]{2})");
-            return test.IsMatch(mac);
+            return (mac.Length == 12 && HexEncoder.InHexFormat(mac));
         }
 
         /*
@@ -288,8 +243,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public bool verifyProtocol(string protocol)
         {
-            Regex test = new Regex("[0-9a-fA-F]{4}");
-            return test.IsMatch(protocol);
+            return (protocol.Length == 4 && HexEncoder.InHexFormat(protocol));
         }
 
         /*
@@ -297,29 +251,8 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public bool verifyPayload(string payload)
         {
-            Regex test1 = new Regex("[0-9a-fA-F]{92,3000}");
-            if (test1.IsMatch(payload))
-            {
-                // make sure there's no characters that shouldn't be in the string
-                Regex test2 = new Regex(".*[^0-9a-fA-F].*");
-                return (!test2.IsMatch(payload));
-            }
-            return false;
+            return (payload.Length >= 92 && payload.Length <= 3000 && HexEncoder.InHexFormat(payload));
         }
-
-        /*
-         * Pad a hex string with leading zeroes.
-         */
-        public string padHex(string inString, int minLength)
-        {
-            while (inString.Length < minLength)
-            {
-                inString = "0" + inString;
-            }
-
-            return inString;
-        }
-
 
         /*
          * Generate a random payload.
@@ -328,10 +261,10 @@ namespace Kopf.PacketPal.PacketEditors
         {
             // 1500 bytes
             Random myRand = new Random();
+            //int length = myRand.Next(46, 1500);
             byte[] myBytes = new byte[1500];
             myRand.NextBytes(myBytes);
             return HexEncoder.ToString(myBytes);
-            //return Tamir.IPLib.Util.Convert.BytesToHex(myBytes);
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
-using Tamir.IPLib;
+using SharpPcap;
 
 namespace Kopf.PacketPal
 {
@@ -18,23 +18,25 @@ namespace Kopf.PacketPal
 
             string myInfo = "";
             // get general info for the device
-            myInfo += dev.PcapDescription + "\r\n\r\n";
-            myInfo += "Name:\t\t" + dev.PcapName + "\r\n";
-            myInfo += "Loopback:\t" + dev.PcapLoopback + "\r\n";
+            myInfo += dev.Description + "\r\n";
+            myInfo += "Name:\t\t" + dev.Name + "\r\n";
+            myInfo += "Hardware Address:\t\t" + dev.Interface.MacAddress.ToString() + "\r\n";
+            myInfo += "Gateway Address:\t\t" + dev.Interface.GatewayAddress.ToString() + "\r\n";
 
-            if (dev is NetworkDevice)
+            if (dev is LivePcapDevice)
             {
-                NetworkDevice netDev = (NetworkDevice)dev;
-                myInfo += "\tIP Address:\t\t" + netDev.IpAddress + "\r\n";
-                myInfo += "\tSubnet Mask:\t\t" + netDev.SubnetMask + "\r\n";
-                myInfo += "\tMAC Address:\t\t" + netDev.MacAddress + "\r\n";
-                myInfo += "\tDefault Gateway:\t\t" + netDev.DefaultGateway + "\r\n";
-                myInfo += "\tPrimary WINS:\t\t" + netDev.WinsServerPrimary + "\r\n";
-                myInfo += "\tSecondary WINS:\t\t" + netDev.WinsServerSecondary + "\r\n";
-                myInfo += "\tDHCP Enabled:\t\t" + netDev.DhcpEnabled + "\r\n";
-                myInfo += "\tDHCP Server:\t\t" + netDev.DhcpServer + "\r\n";
-                myInfo += "\tDHCP Lease Obtained:\t" + netDev.DhcpLeaseObtained + "\r\n";
-                myInfo += "\tDHCP Lease Expires:\t" + netDev.DhcpLeaseExpires + "\r\n";
+                LivePcapDevice netDev = (LivePcapDevice)dev;
+				if (netDev.Loopback)
+				{
+					myInfo += "Loopback:\tTRUE\r\n";
+				}
+				
+				IEnumerator<SharpPcap.PcapAddress> addresses = netDev.Addresses.GetEnumerator();
+				while (addresses.MoveNext())
+				{
+					SharpPcap.PcapAddress address = addresses.Current;
+					myInfo += "Address:\t\t" + address.Addr.ToString() + "\r\n";
+				}
             }
 
             textBoxInfo.Text = myInfo;

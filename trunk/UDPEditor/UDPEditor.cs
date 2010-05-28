@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Tamir.IPLib.Packets;
-using Tamir.IPLib.Util;
-using Tamir.IPLib.Packets.Util;
+using SharpPcap;
+using PacketDotNet;
 using Kopf.PacketPal.Util;
 using Kopf.PacketPal.TCPIPLayers;
 using System.Windows.Forms;
@@ -43,7 +42,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override string getVersion()
         {
-            return "1.0";
+            return "1.1";
         }
 
         /*
@@ -75,11 +74,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override bool canHandle(Packet packet)
         {
-            if (packet is UDPPacket)
-            {
-                return true;
-            }
-            return false;
+            return (packet is UdpPacket);
         }
 
         /*
@@ -95,17 +90,19 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override Packet guiEdit(Packet packet)
         {
-            if (!(packet is UDPPacket))
+            if (!(packet is UdpPacket))
             {
                 throw new EditorInvalidPacket("Not a valid UDP Packet!");
             }
 
+            object[] fields = explode(packet);
+
             UDPEditorForm form = new UDPEditorForm(this,
-                ((UDPPacket)packet).SourcePort,
-                ((UDPPacket)packet).DestinationPort,
-                ((UDPPacket)packet).UDPLength,
-                ((UDPPacket)packet).UDPChecksum,
-                HexEncoder.ToString(((UDPPacket)packet).UDPData)
+                (int)fields[0],
+                (int)fields[1],
+                (int)fields[2],
+                (string)fields[3],
+                (string)fields[4]
             );
 
             // show the form, wait for it to close
@@ -113,19 +110,17 @@ namespace Kopf.PacketPal.PacketEditors
             // if SAVE was clicked
             if (form.DialogResult == DialogResult.OK)
             {
-                ((UDPPacket)packet).SourcePort = form.getSourcePort();
-                ((UDPPacket)packet).DestinationPort = form.getDestinationPort();
-                ((UDPPacket)packet).UDPLength = form.getLength();
-                ((UDPPacket)packet).UDPChecksum = form.getChecksum();
+                fields[0] = form.getSourcePort();
+                fields[1] = form.getDestinationPort();
+                fields[2] = form.getLength();
+                fields[3] = form.getChecksum();
+                fields[4] = form.getData();
 
-                if (form.reCompile)
+                packet = compile(fields, packet);
+
+                if (form.reCompute)
                 {
-                    object[] temp = new object[4];
-                    temp[0] = ((UDPPacket)packet).EthernetHeader;
-                    temp[1] = ((UDPPacket)packet).IPHeader;
-                    temp[2] = ((UDPPacket)packet).UDPHeader;
-                    temp[3] = form.getData();
-                    packet = compile(temp);
+                    packet.UpdateCalculatedValues();
                 }
 
                 // destroy the form
@@ -158,7 +153,7 @@ namespace Kopf.PacketPal.PacketEditors
             // set UDP protocol type
             temp[23] = 0x11;
 
-            Packet packet = PacketFactory.dataToPacket(LinkLayers_Fields.IEEE802, temp);
+            UdpPacket packet = new UdpPacket(1, 2);
 
             // just use the other function now that we have a valid packet
             return guiEdit(packet);
@@ -169,15 +164,15 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public override object[] explode(Packet packet)
         {
-            if (!(packet is UDPPacket))
+            if (!(packet is UdpPacket))
             {
                 throw new EditorInvalidPacket("Not a valid UDP Packet!");
             }
 
+            UdpPacket udpPacket = (UdpPacket)packet;
+
             /*
              * Split into fields:
-             *  - ethernet header
-             *  - ip header
              *  - source port
              *  - destination port
              *  - length
@@ -185,159 +180,94 @@ namespace Kopf.PacketPal.PacketEditors
              *  - data
              */
 
-            object[] ret = new object[7];
-            ret[0] = ((UDPPacket)packet).EthernetHeader;
-            ret[1] = ((UDPPacket)packet).IPHeader;
-            ret[2] = ((UDPPacket)packet).SourcePort;
-            ret[3] = ((UDPPacket)packet).DestinationPort;
-            ret[4] = ((UDPPacket)packet).UDPLength;
-            ret[5] = ((UDPPacket)packet).UDPChecksum;
-            ret[6] = ((UDPPacket)packet).UDPData;
+            object[] ret = new object[5];
+            ret[0] = System.Convert.ToInt32(udpPacket.SourcePort);
+            ret[1] = System.Convert.ToInt32(udpPacket.DestinationPort);
+            ret[2] = System.Convert.ToInt32(udpPacket.Length);
+            ret[3] = HexEncoder.ToString(ByteUtil.getBytes(udpPacket.Bytes, UdpFields.ChecksumPosition, UdpFields.ChecksumLength));
+            ret[4] = HexEncoder.ToString(udpPacket.Bytes);
 
             return ret;
+        }
+
+        public override Packet compile(object[] fields)
+        {
+            return compile(fields, null);
         }
 
         /*
          * Create a new ICMPPacket based on provided fields.
          */
-        public override Packet compile(object[] fields)
+        public override Packet compile(object[] fields, Packet packet)
         {
             // make sure the array is properly constructed
-            if (fields.Length == 7)
+            if (fields.Length == 5)
             {
                 /*
-                 * ethernet header
-                 * ip header
                  * source port
                  * dest port
                  * length
                  * checksum
                  * data
                  */
-                if (!(fields[0] is byte[]) || !(fields[1] is byte[]) ||
-                !(fields[2] is int) || !(fields[3] is int) ||
-                !(fields[4] is int) || !(fields[5] is int) ||
-                !(fields[6] is string))
+                if (!(fields[0] is int) || !(fields[1] is int) ||
+                !(fields[2] is int) || !(fields[3] is string) ||
+                !(fields[4] is string))
                 {
                     throw new EditorInvalidField("One or more invalid fields specified. Expecting 2 byte arrays, 4 integers, and 1 string.");
                 }
 
-                if (!verifySourcePort((int)fields[2]))
+                if (!verifySourcePort((int)fields[0]))
                 {
                     throw new EditorInvalidField("Invalid UDP Source Port. Expecting an integer from 0 to 65535.");
                 }
-                if (!verifyDestinationPort((int)fields[3]))
+                if (!verifyDestinationPort((int)fields[1]))
                 {
                     throw new EditorInvalidField("Invalid UDP Destination Port. Expecting an integer from 0 to 65535.");
                 }
-                if (!verifyLength((int)fields[4]))
+                if (!verifyLength((int)fields[2]))
                 {
                     throw new EditorInvalidField("Invalid UDP Datagram length. Expecting an integer from 0 to 65535.");
                 }
-                if (!verifyChecksum((int)fields[5]))
+                if (!verifyChecksum((string)fields[3]))
                 {
                     throw new EditorInvalidField("Invalid UDP Checksum. Expecting an integer from 0 to 65535.");
                 }
-                if (!verifyData((string)fields[6]))
+                if (!verifyData((string)fields[4]))
                 {
                     throw new EditorInvalidField("Invalid UDP Data. Expecting a hexadecimal string.");
                 }
 
-                int discarded;
+                int discarded = 0;
+                byte[] mySrc = HexEncoder.GetBytes((int)fields[0], 4, out discarded);
+                byte[] myDest = HexEncoder.GetBytes((int)fields[1], 4, out discarded);
+                byte[] myLen = HexEncoder.GetBytes((int)fields[2], 4, out discarded);
+                byte[] myCheck = HexEncoder.GetBytes((string)fields[3], out discarded);
+                byte[] myData = HexEncoder.GetBytes((string)fields[4], out discarded);
 
-                // convert source port to byte[]
-                byte[] mySrc = HexEncoder.GetBytes(padHex(((int)fields[2]).ToString("x"), 4), out discarded);
-                // convert destination port to byte[]
-                byte[] myDest = HexEncoder.GetBytes(padHex(((int)fields[3]).ToString("x"), 4), out discarded);
-                // convert length to byte[]
-                byte[] myLen = HexEncoder.GetBytes(padHex(((int)fields[4]).ToString("x"), 4), out discarded);
-                // convert checksum to byte[]
-                byte[] myCheck = HexEncoder.GetBytes(padHex(((int)fields[4]).ToString("x"), 4), out discarded);
-                // convert data to byte[]
-                byte[] myData = HexEncoder.GetBytes((string)fields[5], out discarded);
+                byte[] packetBytes = ByteUtil.combineBytes(mySrc, myDest, myLen, myCheck, myData);
 
-
-                // container for everything
-                byte[] temp = new byte[
-                    ((byte[])fields[0]).Length + ((byte[])fields[1]).Length +
-                    16 + myData.Length];
-
-                // copy our bytes over to the temp array for parsing
-                ((byte[])fields[0]).CopyTo(temp, 0);
-                ((byte[])fields[1]).CopyTo(temp, ((byte[])fields[0]).Length);
-                mySrc.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length);
-                myDest.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 4);
-                myLen.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 8);
-                myCheck.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 12);
-                myData.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + 16);
-
-
-                // use the packet factory to compile
-                // this will allow something possibly higher than an EthernetPacket to be constructed
-                return PacketFactory.dataToPacket(
-                    LinkLayers_Fields.IEEE802,
-                    temp
-                );
-            }
-            else if (fields.Length == 4)
-            {
-                /*
-                 * ethernet header
-                 * ip header
-                 * udp header
-                 * udp data
-                 */
-
-                if (!verifyData((string)fields[3]))
+                if (packet == null)
                 {
-                    throw new EditorInvalidField("Invalid UDP Data. Expecting a hexadecimal string.");
+                    packet = new UdpPacket(packetBytes, 0);
+                }
+                else
+                {
+                    Packet parent = packet.ParentPacket;
+                    packet = new UdpPacket(packetBytes, 0);
+                    packet.ParentPacket = parent;
                 }
 
-                int discarded;
-                // convert data to byte[]
-                byte[] myData = HexEncoder.GetBytes((string)fields[3], out discarded);
-
-                // container for everything
-                byte[] temp = new byte[
-                    ((byte[])fields[0]).Length + ((byte[])fields[1]).Length +
-                    ((byte[])fields[2]).Length + myData.Length];
-
-                // copy our bytes over to the temp array for parsing
-                ((byte[])fields[0]).CopyTo(temp, 0);
-                ((byte[])fields[1]).CopyTo(temp, ((byte[])fields[0]).Length);
-                ((byte[])fields[2]).CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length);
-                myData.CopyTo(temp, ((byte[])fields[0]).Length + ((byte[])fields[1]).Length + ((byte[])fields[2]).Length);
-
-                // use the packet factory to compile
-                // this will allow something possibly higher than an EthernetPacket to be constructed
-                return PacketFactory.dataToPacket(
-                    LinkLayers_Fields.IEEE802,
-                    temp
-                );
+                return packet;
             }
             else
             {
                 throw new EditorInvalidField("Invalid field count to construct a UDP Packet.");
             }
-
         }
 
         #endregion required_methods
 
-
-
-        /*
-         * Pad a hex string with leading zeroes.
-         */
-        public string padHex(string inString, int minLength)
-        {
-            while (inString.Length < minLength)
-            {
-                inString = "0" + inString;
-            }
-
-            return inString;
-        }
 
         /**
          * field verification
@@ -348,11 +278,7 @@ namespace Kopf.PacketPal.PacketEditors
          */
         public bool verifySourcePort(int type)
         {
-            if (type >= 0 && type < 65536)
-            {
-                return true;
-            }
-            return false;
+            return (type >= 0 && type < 65536);
         }
 
         /*
@@ -360,11 +286,7 @@ namespace Kopf.PacketPal.PacketEditors
         */
         public bool verifyDestinationPort(int code)
         {
-            if (code >= 0 && code < 65536)
-            {
-                return true;
-            }
-            return false;
+            return (code >= 0 && code < 65536);
         }
 
         /*
@@ -372,23 +294,15 @@ namespace Kopf.PacketPal.PacketEditors
         */
         public bool verifyLength(int code)
         {
-            if (code >= 0 && code < 65536)
-            {
-                return true;
-            }
-            return false;
+            return (code >= 0 && code < 65536);
         }
 
         /*
         * checksum
         */
-        public bool verifyChecksum(int checksum)
+        public bool verifyChecksum(string checksum)
         {
-            if (checksum >= 0 && checksum < 65536)
-            {
-                return true;
-            }
-            return false;
+            return (checksum.Length == 4 && HexEncoder.InHexFormat(checksum));
         }
 
         /*
@@ -396,14 +310,7 @@ namespace Kopf.PacketPal.PacketEditors
         */
         public bool verifyData(string data)
         {
-            Regex test1 = new Regex("[0-9a-fA-F]{0,2960}");
-            if (test1.IsMatch(data))
-            {
-                // make sure there's no characters that shouldn't be in the string
-                Regex test2 = new Regex(".*[^0-9a-fA-F].*");
-                return (!test2.IsMatch(data));
-            }
-            return false;
+            return (data.Length <= 2960 && HexEncoder.InHexFormat(data));
         }
 
     }

@@ -14,11 +14,10 @@ namespace Kopf.PacketPal.PacketEditors
 
         private int mySrc;
         private int myDst;
-        private long mySeqNum;
-        private long myAckNum;
+        private int mySeqNum;
+        private int myAckNum;
         private int myLen;
-        private bool myCWR;
-        private bool myECN;
+        private int myReserved;
         private bool myURG;
         private bool myACK;
         private bool myPSH;
@@ -26,7 +25,7 @@ namespace Kopf.PacketPal.PacketEditors
         private bool mySYN;
         private bool myFIN;
         private int myWindow;
-        private int myChecksum;
+        private string myChecksum;
         private int myUrgentPointer;
         private string myData;
 
@@ -34,9 +33,9 @@ namespace Kopf.PacketPal.PacketEditors
         public bool reCompile = false;
         public bool reCompute = false;
 
-        public TCPEditorForm(TCPEditor parent, int srcPort, int dstPort, long sequenceNumber, long ackNumber, 
-            int headerLength, bool cwrFlag, bool ecnFlag, bool urgFlag, bool ackFlag, bool pshFlag, 
-            bool rstFlag, bool synFlag, bool finFlag, int windowSize, int checksum, int urgentPointer, string data)
+        public TCPEditorForm(TCPEditor parent, int srcPort, int dstPort, int sequenceNumber, int ackNumber, 
+            int headerLength, int reserved, bool urgFlag, bool ackFlag, bool pshFlag, 
+            bool rstFlag, bool synFlag, bool finFlag, int windowSize, string checksum, int urgentPointer, string data)
         {
             InitializeComponent();
 
@@ -47,8 +46,7 @@ namespace Kopf.PacketPal.PacketEditors
             mySeqNum = sequenceNumber;
             myAckNum = ackNumber;
             myLen = headerLength;
-            myCWR = cwrFlag;
-            myECN = ecnFlag;
+            myReserved = reserved;
             myURG = urgFlag;
             myACK = ackFlag;
             myPSH = pshFlag;
@@ -66,8 +64,6 @@ namespace Kopf.PacketPal.PacketEditors
             txtAck.Text = myAckNum.ToString();
             txtLen.Text = myLen.ToString();
 
-            checkBoxCWR.Checked = myCWR;
-            checkBoxECN.Checked = myECN;
             checkBoxURG.Checked = myURG;
             checkBoxACK.Checked = myACK;
             checkBoxPSH.Checked = myPSH;
@@ -111,14 +107,9 @@ namespace Kopf.PacketPal.PacketEditors
             return myLen;
         }
 
-        public bool getCwrFlag()
+        public int getReserved()
         {
-            return myCWR;
-        }
-
-        public bool getEcnFlag()
-        {
-            return myECN;
+            return myReserved;
         }
 
         public bool getUrgFlag()
@@ -156,7 +147,7 @@ namespace Kopf.PacketPal.PacketEditors
             return myWindow;
         }
 
-        public int getChecksum()
+        public string getChecksum()
         {
             return myChecksum;
         }
@@ -385,6 +376,40 @@ namespace Kopf.PacketPal.PacketEditors
             }
         }
 
+        /*
+         * reserved
+         */
+        private void verifyReserved(object sender, EventArgs e)
+        {
+            if (!(sender is TextBox))
+            {
+                return;
+            }
+            try
+            {
+                if (myParent.verifySourcePort(int.Parse(((TextBox)sender).Text)))
+                {
+                    btnSave.Enabled = true;
+                    ((TextBox)sender).BackColor = Color.White;
+                    ((TextBox)sender).ForeColor = Color.Black;
+                }
+                else
+                {
+                    btnSave.Enabled = false;
+                    ((TextBox)sender).Focus();
+                    ((TextBox)sender).BackColor = Color.Red;
+                    ((TextBox)sender).ForeColor = Color.White;
+                }
+            }
+            catch (Exception ee)
+            {
+                btnSave.Enabled = false;
+                ((TextBox)sender).Focus();
+                ((TextBox)sender).BackColor = Color.Red;
+                ((TextBox)sender).ForeColor = Color.White;
+            }
+        }
+
 
         /*
         * checksum
@@ -397,7 +422,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyChecksum(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyChecksum(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -500,13 +525,12 @@ namespace Kopf.PacketPal.PacketEditors
             mySrc = int.Parse(txtSrc.Text);
             myDst = int.Parse(txtDst.Text);
 
-            mySeqNum = long.Parse(txtSequence.Text);
-            myAckNum = long.Parse(txtAck.Text);
+            mySeqNum = int.Parse(txtSequence.Text);
+            myAckNum = int.Parse(txtAck.Text);
 
             myLen = int.Parse(txtLen.Text);
+            myReserved = int.Parse(txtReserved.Text);
 
-            myCWR = checkBoxCWR.Checked;
-            myECN = checkBoxECN.Checked;
             myURG = checkBoxURG.Checked;
             myACK = checkBoxACK.Checked;
             myPSH = checkBoxPSH.Checked;
@@ -515,7 +539,7 @@ namespace Kopf.PacketPal.PacketEditors
             myFIN = checkBoxFIN.Checked;
 
             myWindow = int.Parse(txtWindow.Text);
-            myChecksum = int.Parse(txtChecksum.Text);
+            myChecksum = txtChecksum.Text;            
             myUrgentPointer = int.Parse(txtUrgent.Text);
 
             this.DialogResult = DialogResult.OK;
@@ -528,8 +552,6 @@ namespace Kopf.PacketPal.PacketEditors
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
-
-
 
     }
 }

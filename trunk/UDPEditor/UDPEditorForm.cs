@@ -14,14 +14,14 @@ namespace Kopf.PacketPal.PacketEditors
         private int mySrc;
         private int myDest;
         private int myLength;
-        private int myChecksum;
+        private string myChecksum;
         private string myData;
 
         public bool reCompile = false;
 
         public bool reCompute = false;
 
-        public UDPEditorForm(UDPEditor parent, int sourcePort, int destPort, int length, int checksum, string data)
+        public UDPEditorForm(UDPEditor parent, int sourcePort, int destPort, int length, string checksum, string data)
         {
             InitializeComponent();
 
@@ -35,7 +35,7 @@ namespace Kopf.PacketPal.PacketEditors
             txtSrc.Text = mySrc.ToString();
             txtDest.Text = myDest.ToString();
             txtLength.Text = myLength.ToString();
-            txtChecksum.Text = myChecksum.ToString();
+            txtChecksum.Text = myChecksum;
             txtData.Text = myData;
         }
 
@@ -54,7 +54,7 @@ namespace Kopf.PacketPal.PacketEditors
             return myLength;
         }
 
-        public int getChecksum()
+        public string getChecksum()
         {
             return myChecksum;
         }
@@ -185,7 +185,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyChecksum(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyChecksum(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -239,7 +239,7 @@ namespace Kopf.PacketPal.PacketEditors
             mySrc = int.Parse(txtSrc.Text);
             myDest = int.Parse(txtDest.Text);
             myLength = int.Parse(txtLength.Text);
-            myChecksum = int.Parse(txtChecksum.Text);
+            myChecksum = txtChecksum.Text;
 
             if (txtData.Text != myData)
             {
