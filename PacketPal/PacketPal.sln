@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 9.00
-# Visual C# Express 2005
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PacketPal", "PacketPal\PacketPal.csproj", "{E86BE073-2659-48DD-A812-964D3D6D3C7C}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DFCDDF30-636F-40C5-85AC-2DD91A07775C} = {DFCDDF30-636F-40C5-85AC-2DD91A07775C}

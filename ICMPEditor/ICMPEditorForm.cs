@@ -11,16 +11,16 @@ namespace Kopf.PacketPal.PacketEditors
     public partial class ICMPEditorForm : Form
     {
         private ICMPEditor myParent;
-        private int myType;
-        private int myCode;
-        private int myChecksum;
+        private string myType;
+        private string myCode;
+        private string myChecksum;
         private string myData;
 
         public bool reCompile = false;
 
         public bool reCompute = false;
 
-        public ICMPEditorForm(ICMPEditor parent, int messageType, int messageCode, int checksum, string data)
+        public ICMPEditorForm(ICMPEditor parent, string messageType, string messageCode, string checksum, string data)
         {
             InitializeComponent();
 
@@ -36,17 +36,17 @@ namespace Kopf.PacketPal.PacketEditors
             txtData.Text = myData;
         }
 
-        public int getType()
+        public string getType()
         {
             return myType;
         }
 
-        public int getCode()
+        public string getCode()
         {
             return myCode;
         }
 
-        public int getChecksum()
+        public string getChecksum()
         {
             return myChecksum;
         }
@@ -72,7 +72,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyMessageType(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyMessageType(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -107,7 +107,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyMessageCode(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyMessageCode(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -142,7 +142,7 @@ namespace Kopf.PacketPal.PacketEditors
             }
             try
             {
-                if (myParent.verifyChecksum(int.Parse(((TextBox)sender).Text)))
+                if (myParent.verifyChecksum(((TextBox)sender).Text))
                 {
                     btnSave.Enabled = true;
                     ((TextBox)sender).BackColor = Color.White;
@@ -193,9 +193,9 @@ namespace Kopf.PacketPal.PacketEditors
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            myType = int.Parse(txtType.Text);
-            myCode = int.Parse(txtCode.Text);
-            myChecksum = int.Parse(txtChecksum.Text);
+            myType = txtType.Text;
+            myCode = txtCode.Text;
+            myChecksum = txtChecksum.Text;
 
             if (txtData.Text != myData)
             {

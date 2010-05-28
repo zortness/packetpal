@@ -5,17 +5,19 @@ using System.Data;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using PacketDotNet;
+using Kopf.PacketPal.Util;
 
 namespace Kopf.PacketPal.PacketEditors
 {
     public partial class ARPEditorForm : Form
     {
         ARPEditor myParent;
-        int myHTYPE;
-        int myPTYPE;
+        string myHTYPE;
+        string myPTYPE;
         int myHLEN;
         int myPLEN;
-        int myOPER;
+        string myOPER;
         string mySHA;
         string mySPA;
         string myTHA;
@@ -24,8 +26,8 @@ namespace Kopf.PacketPal.PacketEditors
         /*
          * Constructor
          */
-        public ARPEditorForm(ARPEditor parent, int hardwareType, int protocolType, int hardwareLength, int protocolLength,
-            int operation, string senderHwAddress, string senderProtocolAddress, string targetHwAddress,
+        public ARPEditorForm(ARPEditor parent, string hardwareType, string protocolType, int hardwareLength, int protocolLength,
+            string operation, string senderHwAddress, string senderProtocolAddress, string targetHwAddress,
             string targetProtocolAddress)
         {
             InitializeComponent();
@@ -40,11 +42,12 @@ namespace Kopf.PacketPal.PacketEditors
             myTHA = targetHwAddress;
             myTPA = targetProtocolAddress;
 
-            txtHTYPE.Text = myHTYPE.ToString();
-            txtPTYPE.Text = myPTYPE.ToString();
+           
+            txtHTYPE.Text = myHTYPE;
+            txtPTYPE.Text = myPTYPE;
             txtHLEN.Text = myHLEN.ToString();
             txtPLEN.Text = myPLEN.ToString();
-            txtOPER.Text = myOPER.ToString();
+            txtOPER.Text = myOPER;
             txtSHA.Text = mySHA;
             txtSPA.Text = mySPA;
             txtTHA.Text = myTHA;
@@ -58,7 +61,7 @@ namespace Kopf.PacketPal.PacketEditors
         /*
          * HTYPE
          */
-        public int getHardwareType()
+        public string getHardwareType()
         {
             return myHTYPE;
         }
@@ -66,7 +69,7 @@ namespace Kopf.PacketPal.PacketEditors
         /*
         * PTYPE
         */
-        public int getProtocolType()
+        public string getProtocolType()
         {
             return myPTYPE;
         }
@@ -90,7 +93,7 @@ namespace Kopf.PacketPal.PacketEditors
         /*
          * OPER
          */
-        public int getOperation()
+        public string getOperation()
         {
             return myOPER;
         }
@@ -140,25 +143,14 @@ namespace Kopf.PacketPal.PacketEditors
             {
                 return;
             }
-            try
+            if (myParent.verifyHardwareType(((TextBox)sender).Text))
             {
-                if (myParent.verifyHardwareType(int.Parse(((TextBox)sender).Text)))
-                {
-                    btnSave.Enabled = true;
-                    ((TextBox)sender).BackColor = Color.White;
-                    ((TextBox)sender).ForeColor = Color.Black;
-                }
-                else
-                {
-                    btnSave.Enabled = false;
-                    ((TextBox)sender).Focus();
-                    ((TextBox)sender).BackColor = Color.Red;
-                    ((TextBox)sender).ForeColor = Color.White;
-                }
+                btnSave.Enabled = true;
+                ((TextBox)sender).BackColor = Color.White;
+                ((TextBox)sender).ForeColor = Color.Black;
             }
-            catch (Exception ee)
+            else
             {
-                // we get here when the int.parse dies
                 btnSave.Enabled = false;
                 ((TextBox)sender).Focus();
                 ((TextBox)sender).BackColor = Color.Red;
@@ -175,25 +167,14 @@ namespace Kopf.PacketPal.PacketEditors
             {
                 return;
             }
-            try
+            if (myParent.verifyProtocolType(((TextBox)sender).Text))
             {
-                if (myParent.verifyProtocolType(int.Parse(((TextBox)sender).Text)))
-                {
-                    btnSave.Enabled = true;
-                    ((TextBox)sender).BackColor = Color.White;
-                    ((TextBox)sender).ForeColor = Color.Black;
-                }
-                else
-                {
-                    btnSave.Enabled = false;
-                    ((TextBox)sender).Focus();
-                    ((TextBox)sender).BackColor = Color.Red;
-                    ((TextBox)sender).ForeColor = Color.White;
-                }
+                btnSave.Enabled = true;
+                ((TextBox)sender).BackColor = Color.White;
+                ((TextBox)sender).ForeColor = Color.Black;
             }
-            catch (Exception ee)
+            else
             {
-                // we get here when the int.parse dies
                 btnSave.Enabled = false;
                 ((TextBox)sender).Focus();
                 ((TextBox)sender).BackColor = Color.Red;
@@ -280,25 +261,14 @@ namespace Kopf.PacketPal.PacketEditors
             {
                 return;
             }
-            try
+            if (myParent.verifyOperation(((TextBox)sender).Text))
             {
-                if (myParent.verifyOperation(int.Parse(((TextBox)sender).Text)))
-                {
-                    btnSave.Enabled = true;
-                    ((TextBox)sender).BackColor = Color.White;
-                    ((TextBox)sender).ForeColor = Color.Black;
-                }
-                else
-                {
-                    btnSave.Enabled = false;
-                    ((TextBox)sender).Focus();
-                    ((TextBox)sender).BackColor = Color.Red;
-                    ((TextBox)sender).ForeColor = Color.White;
-                }
+                btnSave.Enabled = true;
+                ((TextBox)sender).BackColor = Color.White;
+                ((TextBox)sender).ForeColor = Color.Black;
             }
-            catch (Exception ee)
+            else
             {
-                // we get here when the int.parse dies
                 btnSave.Enabled = false;
                 ((TextBox)sender).Focus();
                 ((TextBox)sender).BackColor = Color.Red;
@@ -404,11 +374,11 @@ namespace Kopf.PacketPal.PacketEditors
 
         private void btnSave_Click(object sender, EventArgs e)
         {
-            myHTYPE = int.Parse(txtHTYPE.Text);
-            myPTYPE = int.Parse(txtPTYPE.Text);
+            myHTYPE = txtHTYPE.Text;
+            myPTYPE = txtPTYPE.Text;
             myHLEN = int.Parse(txtHLEN.Text);
             myPLEN = int.Parse(txtPLEN.Text);
-            myOPER = int.Parse(txtOPER.Text);
+            myOPER = txtOPER.Text;
             mySHA = txtSHA.Text;
             mySPA = txtSPA.Text;
             myTHA = txtTHA.Text;

@@ -11,10 +11,8 @@ using Kopf.PacketPal.PacketEditors;
 using Kopf.PacketPal.Plugins;
 using Kopf.PacketPal.TCPIPLayers;
 using Kopf.PacketPal.Util;
-using Tamir.IPLib;
-using Tamir.IPLib.Packets;
-using Tamir.IPLib.Packets.Util;
-using Tamir.IPLib.Util;
+using SharpPcap;
+using PacketDotNet;
 
 namespace Kopf.PacketPal
 {
@@ -29,7 +27,7 @@ namespace Kopf.PacketPal
         const int myTimeout = 1;
 
         // version
-        public const string myVersion = "1.0.2 RC2";
+        public const string myVersion = "1.2";
 
         #endregion constants
 
@@ -162,28 +160,28 @@ namespace Kopf.PacketPal
             listBoxCaptureInterface.Items.Clear();
             listBoxSendInterface.Items.Clear();
             // all devices
-            PcapDeviceList devices = SharpPcap.GetAllDevices();
-            foreach (PcapDevice dev in devices)
+			LivePcapDeviceList list = SharpPcap.LivePcapDeviceList.Instance;
+			IEnumerator<LivePcapDevice> devices = list.GetEnumerator();
+			while (devices.MoveNext())
             {
-                // register our packet handling function with the OnPacketArrival event
-                dev.PcapOnPacketArrival +=
-                    new SharpPcap.PacketArrivalEvent(device_PcapOnPacketArrival);
+            		LivePcapDevice dev = devices.Current;
+				// register our packet handling function with the OnPacketArrival event
+				dev.OnPacketArrival +=
+                    new SharpPcap.PacketArrivalEventHandler(device_PcapOnPacketArrival);
                 // register our shutdown event
-                dev.PcapOnCaptureStopped +=
-                    new SharpPcap.PcapCaptureStoppedEvent(device_PcapOnPacketCaptureStopped);
+				dev.OnCaptureStopped +=
+                    new SharpPcap.CaptureStoppedEventHandler(device_PcapOnPacketCaptureStopped);
                 // add the device to our list
                 myNetworkDevices.Add((PcapDevice)dev);
 
                 // add a description of the device to our capture and send lists
-                string ip = "0.0.0.0";
-                if (dev is NetworkDevice && ((NetworkDevice)dev).IpAddress != null)
+                string ip = "";
+                IEnumerator<PcapAddress> addresses = dev.Addresses.GetEnumerator();
+                while (addresses.MoveNext())
                 {
-                    ip = ((NetworkDevice)dev).IpAddress;
-                }
-                else if (dev.PcapIpAddress != null)
-                {
-                    ip = dev.PcapIpAddress;
-                }
+                		PcapAddress address = addresses.Current;
+					ip += address.Addr.ToString() + ";";
+				}
                 listBoxCaptureInterface.Items.Add(ip);
                 listBoxSendInterface.Items.Add(ip);
             }
@@ -308,7 +306,7 @@ namespace Kopf.PacketPal
             if (e.Current is PcapDevice)
             {
                 myCaptureDevice = (PcapDevice)e.Current;
-                txtCapDeviceInfo.Text = ((PcapDevice)e.Current).PcapDescription;
+                txtCapDeviceInfo.Text = ((PcapDevice)e.Current).Description;
             }
         }
 
@@ -324,7 +322,7 @@ namespace Kopf.PacketPal
             if (e.Current is PcapDevice)
             {
                 mySendDevice = (PcapDevice)e.Current;
-                txtSendDeviceInfo.Text = ((PcapDevice)e.Current).PcapDescription;
+                txtSendDeviceInfo.Text = ((PcapDevice)e.Current).Description;
             }
         }
 
@@ -385,6 +383,11 @@ namespace Kopf.PacketPal
          */
         private void addCapturedPacket(Packet packet)
         {
+            if (packet == null)
+            {
+                System.Console.WriteLine("Got aa null packet!");
+                return;
+            }
             if (checkBoxUpdate.Checked)
             {
                 // not accessable yet
@@ -400,6 +403,7 @@ namespace Kopf.PacketPal
                     // this is actually all we cared about
                     myCapturedPackets.Add(packet);
                     listBoxCapture.Items.Add(packet.ToString());
+
                     if (checkBoxScroll.Checked)
                     {
                         listBoxCapture.SelectedIndex = listBoxCapture.Items.Count - 1;
@@ -467,8 +471,20 @@ namespace Kopf.PacketPal
         /*
          * Packet capture handler, calls thread safe handlers.
          */
-        private void device_PcapOnPacketArrival(object sender, Packet packet)
+        private void device_PcapOnPacketArrival(object sender, CaptureEventArgs args)
         {
+            Packet packet = Packet.ParsePacket(args.Packet);
+
+            //System.Console.WriteLine("- " + packet.ToString());
+            //Packet current = packet.PayloadPacket;
+            //int count = 1;
+            //while (current != null)
+            //{
+            //    System.Console.WriteLine("--" + count + " " + current.ToString());
+            //    count++;
+            //    current = current.PayloadPacket;
+            //}
+
             // register packet
             addCapturedPacket(packet);
             // counter
@@ -479,8 +495,9 @@ namespace Kopf.PacketPal
         /*
          * Packet loaded from file to send queue.
          */
-        private void device_PcapOnPacketArrivalSend(object sender, Packet packet)
+        private void device_PcapOnPacketArrivalSend(object sender, CaptureEventArgs args)
         {
+            Packet packet = Packet.ParsePacket(args.Packet);
             mySendPackets.Add(packet);
         }
 
@@ -488,7 +505,7 @@ namespace Kopf.PacketPal
         /*
          * Handle PcapOnCaptureStopped event.
          */
-        private void device_PcapOnPacketCaptureStopped(object sender, bool flag)
+        private void device_PcapOnPacketCaptureStopped(object sender, CaptureStoppedEventStatus status)
         {
             //MessageBox.Show("Sender:" + sender.ToString() + "\nFlag:" + flag.ToString());
         }
@@ -508,23 +525,23 @@ namespace Kopf.PacketPal
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // stop any network devices that are active
-            if (myCaptureDevice is PcapDevice && myCaptureDevice.PcapOpened)
+            if (myCaptureDevice is PcapDevice && myCaptureDevice.Opened)
             {
-                if (myCaptureDevice.PcapStarted)
+                if (myCaptureDevice.Started)
                 {
-                    myCaptureDevice.PcapStopCapture();
+                    myCaptureDevice.StopCapture();
                 }
-                myCaptureDevice.PcapClose();
+                myCaptureDevice.Close();
             }
 
-            if (mySendDevice is PcapDevice && mySendDevice.PcapOpened)
+            if (mySendDevice is PcapDevice && mySendDevice.Opened)
             {
                 // not sure if this will stop sending a packet queue
-                if (mySendDevice.PcapStarted)
+                if (mySendDevice.Started)
                 {
-                    myCaptureDevice.PcapStopCapture();
+                    myCaptureDevice.StopCapture();
                 }
-                myCaptureDevice.PcapClose();
+                myCaptureDevice.Close();
             }
 
             this.Close();
@@ -578,10 +595,11 @@ namespace Kopf.PacketPal
                 ((TextBox)sender).BackColor = Color.White;
                 ((TextBox)sender).ForeColor = Color.Black;
                 setCaptureDevice();
-                myCaptureDevice.PcapOpen(true, myTimeout);
+                myCaptureDevice.StopCaptureTimeout = new TimeSpan(0, 0, myTimeout);
+				myCaptureDevice.Open();
                 try
                 {
-                    myCaptureDevice.PcapSetFilter(txtFilter.Text);
+					myCaptureDevice.SetFilter(txtFilter.Text);
                 }
                 catch (Exception ee)
                 {
@@ -590,7 +608,7 @@ namespace Kopf.PacketPal
                     ((TextBox)sender).Focus();
                     Console.WriteLine("Exception: " + ee.Message);
                 }
-                myCaptureDevice.PcapClose();
+                myCaptureDevice.Close();
                 // reload devices... stupid bug
                 loadNetworkInterfaces();
             }
@@ -610,12 +628,13 @@ namespace Kopf.PacketPal
             labelCapturedSession.Text = myPacketSessionCount.ToString();
 
             // open the device
-            myCaptureDevice.PcapOpen(true, myTimeout);
+			myCaptureDevice.StopCaptureTimeout = new TimeSpan(0, 0, myTimeout);
+			myCaptureDevice.Open();
 
             // set the device filter
             try
             {
-                myCaptureDevice.PcapSetFilter(txtFilter.Text);
+                myCaptureDevice.SetFilter(txtFilter.Text);
             }
             catch (Exception ee)
             {
@@ -631,7 +650,7 @@ namespace Kopf.PacketPal
             btnStopCapture.Enabled = true;
 
             // start the capture
-            myCaptureDevice.PcapStartCapture();
+            myCaptureDevice.StartCapture();
 
         }
 
@@ -644,10 +663,19 @@ namespace Kopf.PacketPal
             btnStopCapture.Enabled = false;
 
             // stop capturing
-            myCaptureDevice.PcapStopCapture();
+            try
+            {
+                myCaptureDevice.StopCapture();
+            }
+            catch (PcapException exception)
+            {
+                btnStopCapture.Enabled = true;
+                MessageBox.Show("Unable to stop PCAP device, please try again in a moment. " + exception.Message);
+                return;
+            }
 
             // close the device
-            myCaptureDevice.PcapClose();
+            myCaptureDevice.Close();
 
             // reload the network interfaces... they don't seem to want to work more than once
             loadNetworkInterfaces();
@@ -671,7 +699,7 @@ namespace Kopf.PacketPal
             if (en.Current is PcapDevice)
             {
                 myCaptureDevice = (PcapDevice)en.Current;
-                txtCapDeviceInfo.Text = ((PcapDevice)en.Current).PcapDescription;
+                txtCapDeviceInfo.Text = ((PcapDevice)en.Current).Description;
             }
         }
 
@@ -696,7 +724,7 @@ namespace Kopf.PacketPal
                 }
                 // check each of the PacketEditors that we have loaded to see if they can handle this packet
                 ToolStripMenuItem tempMenu;
-                if(tempPacket!=null)
+                while (tempPacket != null)
                 {
                     ie = myPacketEditors.GetEnumerator();
                     PacketEditor tempEditor;
@@ -712,6 +740,7 @@ namespace Kopf.PacketPal
                             contextMenuStripCapture.Items.Add(tempMenu);
                         }
                     }
+                    tempPacket = tempPacket.PayloadPacket;
                 }
 
                 ToolStripSeparator separator = new ToolStripSeparator();
@@ -887,6 +916,15 @@ namespace Kopf.PacketPal
                 // send the Packet to the PacketEditor
                 if (myPacket != null)
                 {
+                    while (!myEditor.canHandle(myPacket))
+                    {
+                        // must be a child packet
+                        myPacket = myPacket.PayloadPacket;
+                        if (myPacket == null)
+                        {
+                            throw new Exception("Trying to edit with the wrong type of editor!");
+                        }
+                    }
                     myPacket = myEditor.guiEdit(myPacket);
                     syncCapturedList();
                 }
@@ -945,7 +983,7 @@ namespace Kopf.PacketPal
             if (en.Current is PcapDevice)
             {
                 mySendDevice = (PcapDevice)en.Current;
-                txtSendDeviceInfo.Text = ((PcapDevice)en.Current).PcapDescription;
+                txtSendDeviceInfo.Text = ((PcapDevice)en.Current).Description;
             }
         }
 
@@ -970,7 +1008,7 @@ namespace Kopf.PacketPal
                 }
                 // check each of the PacketEditors that we have loaded to see if they can handle this packet
                 ToolStripMenuItem tempMenu;
-                if (tempPacket != null)
+                while (tempPacket != null)
                 {
                     ie = myPacketEditors.GetEnumerator();
                     PacketEditor tempEditor;
@@ -986,6 +1024,7 @@ namespace Kopf.PacketPal
                             contextMenuStripSend.Items.Add(tempMenu);
                         }
                     }
+                    tempPacket = tempPacket.PayloadPacket;
                 }
 
                 ToolStripSeparator separator = new ToolStripSeparator();
@@ -1087,6 +1126,15 @@ namespace Kopf.PacketPal
                 // send the Packet to the PacketEditor
                 if (myPacket != null)
                 {
+                    while (!myEditor.canHandle(myPacket))
+                    {
+                        // must be a child packet
+                        myPacket = myPacket.PayloadPacket;
+                        if (myPacket == null)
+                        {
+                            throw new Exception("Trying to edit with the wrong type of editor!");
+                        }
+                    }
                     myPacket = myEditor.guiEdit(myPacket);
                     syncSendList();
                 }
@@ -1146,7 +1194,7 @@ namespace Kopf.PacketPal
             progressBarSend.Value = 0;
 
             // make sure our PcapDevice is capable of sending packets
-            if (!(mySendDevice is NetworkDevice))
+            if (!(mySendDevice is LivePcapDevice))
             {
                 MessageBox.Show("The selected device is not able to broadcast network packets.\r\n" +
                     "Please select another device before attempting to send packets.");
@@ -1168,7 +1216,10 @@ namespace Kopf.PacketPal
             panelSending.Visible = true;
 
             // open the device
-            mySendDevice.PcapOpen(true, myTimeout);
+            mySendDevice.Open();
+
+            List<Packet> packetsToSend = new List<Packet>();
+            int sendSize = 0;
 
             // determine which packets to send
             if (checkBoxSendSelected.Checked)
@@ -1177,37 +1228,20 @@ namespace Kopf.PacketPal
                 labelSendingTotal.Text = toSend.ToString();
                 // grab the selected packets
                 IEnumerator ie1 = listBoxSend.SelectedIndices.GetEnumerator();
-                try
+                while (ie1.MoveNext())
                 {
-                    while (ie1.MoveNext())
+                    if (ie1.Current is int)
                     {
-                        if (ie1.Current is int)
+                        IEnumerator ie2 = mySendPackets.GetEnumerator((int)ie1.Current, 1);
+                        while (ie2.MoveNext())
                         {
-                            IEnumerator ie2 = mySendPackets.GetEnumerator((int)ie1.Current, 1);
-                            while (ie2.MoveNext())
+                            if (ie2.Current is Packet)
                             {
-                                if (ie2.Current is Packet)
-                                {
-                                    mySendDevice.PcapSendPacket((Packet)ie2.Current);
-                                    sent++;
-                                    labelSendingComp.Text = sent.ToString();
-                                    progressBarSend.Value = sent / toSend;
-
-                                    myPacketSessionCountSent++;
-                                    myPacketTotalCountSent++;
-
-                                    labelSendSession.Text = myPacketSessionCountSent.ToString();
-                                    labelSendTotal.Text = myPacketSessionCountSent.ToString();
-
-                                }
+                                packetsToSend.Add((Packet)ie2.Current);
+                                sendSize += ((Packet)ie2.Current).Bytes.Length;
                             }
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("Failed to send a packet!\r\nCheck to make sure the selected network device is enabled!\r\n"
-                        + "Pcap Message: " + ex.Message);
                 }
 
 
@@ -1218,37 +1252,43 @@ namespace Kopf.PacketPal
                 labelSendingTotal.Text = toSend.ToString();
                 // start sending
                 IEnumerator ie = mySendPackets.GetEnumerator();
-                try
+                while (ie.MoveNext())
                 {
-                    while (ie.MoveNext())
+                    if (ie.Current is Packet)
                     {
-                        if (ie.Current is Packet)
-                        {
-                            mySendDevice.PcapSendPacket((Packet)ie.Current);
-                            sent++;
-                            labelSendingComp.Text = sent.ToString();
-                            progressBarSend.Value = sent / toSend;
-
-                            myPacketSessionCountSent++;
-                            myPacketTotalCountSent++;
-
-                            labelSendSession.Text = myPacketSessionCountSent.ToString();
-                            labelSendTotal.Text = myPacketSessionCountSent.ToString();
-                        }
+                        packetsToSend.Add((Packet)ie.Current);
+                        sendSize += ((Packet)ie.Current).Bytes.Length;
                     }
                 }
-                catch (Exception ex)
+            }
+
+            try
+            {
+                SendQueue myQueue = new SendQueue(sendSize);
+                foreach(Packet packet in packetsToSend)
                 {
-                    MessageBox.Show("Failed to send a packet!\r\nCheck to make sure the selected network device is enabled!\r\n"
-                        + "Pcap Message: " + ex.Message);
+                    myQueue.Add(packet.Bytes);
                 }
+                myQueue.Transmit((LivePcapDevice)mySendDevice, SendQueueTransmitModes.Normal);
+                sent = toSend;
+                labelSendingComp.Text = sent.ToString();
+                progressBarSend.Value = sent / toSend;
+                myPacketSessionCountSent += sent;
+                myPacketTotalCountSent += sent;
+                labelSendSession.Text = myPacketSessionCountSent.ToString();
+                labelSendTotal.Text = myPacketTotalCountSent.ToString();
+            }
+            catch (PcapException ex)
+            {
+                MessageBox.Show("Failed to send packets!\r\nCheck to make sure the selected network device is enabled!\r\n"
+                    + "Pcap Message: " + ex.Message);
             }
 
             // hide the status information
             panelSending.Visible = false;
 
             // close the device
-            mySendDevice.PcapClose();
+            mySendDevice.Close();
 
             // reset the device
             resetNetworkDevice();
@@ -1271,6 +1311,14 @@ namespace Kopf.PacketPal
          */
         private void editMenuOpening(object sender, EventArgs e)
         {
+            if (!(sender is MenuItem))
+            {
+                System.Console.WriteLine("Got something that isn't a MenuItem for the menu handler");
+                return;
+            }
+            MenuItem menu = (MenuItem)sender;
+            
+            
             // clear menu
             editToolStripMenuItem.DropDownItems.Clear();
 
@@ -1301,7 +1349,7 @@ namespace Kopf.PacketPal
                 }
                 // check each of the PacketEditors that we have loaded to see if they can handle this packet
                 ToolStripMenuItem tempMenu;
-                if (tempPacket != null)
+                while (tempPacket != null)
                 {
                     ie = myPacketEditors.GetEnumerator();
                     PacketEditor tempEditor;
@@ -1324,6 +1372,7 @@ namespace Kopf.PacketPal
                             editToolStripMenuItem.DropDownItems.Add(tempMenu);
                         }
                     }
+                    tempPacket = tempPacket.PayloadPacket;
                 }
 
                 ToolStripSeparator separator = new ToolStripSeparator();
@@ -1500,16 +1549,16 @@ namespace Kopf.PacketPal
             if (res != DialogResult.Cancel)
             {
                 // temp device for parsing the file
-                PcapDevice device = SharpPcap.GetPcapOfflineDevice(openFileDialog1.FileName);
+                PcapDevice device = new OfflinePcapDevice(openFileDialog1.FileName);
                 // register packet arrival event
-                device.PcapOnPacketArrival +=
-                    new SharpPcap.PacketArrivalEvent(device_PcapOnPacketArrival);
+                device.OnPacketArrival +=
+                    new PacketArrivalEventHandler(device_PcapOnPacketArrival);
                 // open the device
-                device.PcapOpen();
+                device.Open();
                 // grab all of the packets in the file
-                device.PcapCapture(SharpPcap.INFINITE);
+                device.Capture();
                 // close the device
-                device.PcapClose();
+                device.Close();
             }
         }
 
@@ -1525,16 +1574,16 @@ namespace Kopf.PacketPal
             if (res != DialogResult.Cancel)
             {
                 // temp device for parsing the file
-                PcapDevice device = SharpPcap.GetPcapOfflineDevice(openFileDialog1.FileName);
+                PcapDevice device = new OfflinePcapDevice(openFileDialog1.FileName);
                 // register packet arrival event
-                device.PcapOnPacketArrival +=
-                    new SharpPcap.PacketArrivalEvent(device_PcapOnPacketArrivalSend);
+                device.OnPacketArrival +=
+                    new PacketArrivalEventHandler(device_PcapOnPacketArrivalSend);
                 // open the device
-                device.PcapOpen();
+                device.Open();
                 // grab all of the packets in the file
-                device.PcapCapture(SharpPcap.INFINITE);
+                device.Capture();
                 // close the device
-                device.PcapClose();
+                device.Close();
                 // sync the list
                 syncSendList();
             }
@@ -1552,8 +1601,8 @@ namespace Kopf.PacketPal
             if (res != DialogResult.Cancel)
             {
                 // open device dump
-                myCaptureDevice.PcapOpen(true, myTimeout);
-                myCaptureDevice.PcapDumpOpen(saveFileDialog1.FileName);
+                myCaptureDevice.Open();
+                myCaptureDevice.DumpOpen(saveFileDialog1.FileName);
                 // go through capture queue
                 IEnumerator ie = myCapturedPackets.GetEnumerator();
                 while(ie.MoveNext())
@@ -1561,11 +1610,11 @@ namespace Kopf.PacketPal
                     if(ie.Current is Packet)
                     {
                         // dump the packet to a file
-                        myCaptureDevice.PcapDump((Packet)ie.Current);
+                        myCaptureDevice.Dump(((Packet)ie.Current).Bytes);
                     }
                 }
                 // close device
-                myCaptureDevice.PcapDumpClose();
+                myCaptureDevice.DumpClose();
                 // reset device
                 resetNetworkDevice();
             }
@@ -1583,8 +1632,8 @@ namespace Kopf.PacketPal
             if (res != DialogResult.Cancel)
             {
                 // open device dump
-                mySendDevice.PcapOpen(true, myTimeout);
-                mySendDevice.PcapDumpOpen(saveFileDialog1.FileName);
+                mySendDevice.Open();
+                mySendDevice.DumpOpen(saveFileDialog1.FileName);
                 // go through capture queue
                 IEnumerator ie = mySendPackets.GetEnumerator();
                 while(ie.MoveNext())
@@ -1592,11 +1641,11 @@ namespace Kopf.PacketPal
                     if(ie.Current is Packet)
                     {
                         // dump the packet to a file
-                        mySendDevice.PcapDump((Packet)ie.Current);
+                        mySendDevice.Dump(((Packet)ie.Current).Bytes);
                     }
                 }
                 // close device
-                mySendDevice.PcapDumpClose();
+                mySendDevice.DumpClose();
                 // reset device
                 resetNetworkDevice();
             }

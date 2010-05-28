@@ -135,8 +135,8 @@ namespace Kopf.PacketPal.PacketEditors
             this.txtPayloadHex.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtPayloadHex.Size = new System.Drawing.Size(502, 115);
             this.txtPayloadHex.TabIndex = 4;
-            this.txtPayloadHex.Leave += new System.EventHandler(this.verifyPayloadHex);
             this.txtPayloadHex.TextChanged += new System.EventHandler(this.payloadChanged);
+            this.txtPayloadHex.Leave += new System.EventHandler(this.verifyPayloadHex);
             // 
             // btnRandom
             // 

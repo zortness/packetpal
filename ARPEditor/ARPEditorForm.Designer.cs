@@ -258,7 +258,7 @@ namespace Kopf.PacketPal.PacketEditors
             // 
             // txtOPER
             // 
-            this.txtOPER.Location = new System.Drawing.Point(68, 19);
+            this.txtOPER.Location = new System.Drawing.Point(143, 19);
             this.txtOPER.Name = "txtOPER";
             this.txtOPER.Size = new System.Drawing.Size(100, 20);
             this.txtOPER.TabIndex = 10;
@@ -270,7 +270,7 @@ namespace Kopf.PacketPal.PacketEditors
             this.groupBox3.Controls.Add(this.txtOPER);
             this.groupBox3.Location = new System.Drawing.Point(12, 146);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(180, 47);
+            this.groupBox3.Size = new System.Drawing.Size(254, 47);
             this.groupBox3.TabIndex = 11;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Address Request Protocol";

@@ -5,7 +5,6 @@ using System.Windows.Forms;
 using Kopf.PacketPal.Plugins;
 using Kopf.PacketPal.TCPIPLayers;
 using Kopf.PacketPal.PacketEditors;
-using Tamir.IPLib.Packets;
 
 namespace Kopf.PacketPal
 {
@@ -17,13 +16,9 @@ namespace Kopf.PacketPal
         [STAThread]
         static void Main()
         {
-
-
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            
             Application.Run(new PacketPalForm());
-
         }
     }
 }

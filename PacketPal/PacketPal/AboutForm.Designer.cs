@@ -41,13 +41,13 @@ namespace Kopf.PacketPal
             this.linkLabel6 = new System.Windows.Forms.LinkLabel();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.linkLabel7 = new System.Windows.Forms.LinkLabel();
+            this.linkLabel5 = new System.Windows.Forms.LinkLabel();
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.txtPlugins = new System.Windows.Forms.TextBox();
             this.groupBox4 = new System.Windows.Forms.GroupBox();
             this.txtEditors = new System.Windows.Forms.TextBox();
-            this.linkLabel7 = new System.Windows.Forms.LinkLabel();
-            this.linkLabel5 = new System.Windows.Forms.LinkLabel();
-            this.label1 = new System.Windows.Forms.Label();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -203,6 +203,42 @@ namespace Kopf.PacketPal
             this.groupBox2.TabStop = false;
             this.groupBox2.Text = "Credits";
             // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(6, 67);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(412, 13);
+            this.label1.TabIndex = 15;
+            this.label1.Text = "SharpPcap Copyright (c) 2005 Tamir Gal, http://www.tamirgal.com, All rights reser" +
+                "ved.";
+            // 
+            // linkLabel7
+            // 
+            this.linkLabel7.AutoSize = true;
+            this.linkLabel7.LinkArea = new System.Windows.Forms.LinkArea(37, 48);
+            this.linkLabel7.Location = new System.Drawing.Point(9, 101);
+            this.linkLabel7.Name = "linkLabel7";
+            this.linkLabel7.Size = new System.Drawing.Size(263, 17);
+            this.linkLabel7.TabIndex = 14;
+            this.linkLabel7.TabStop = true;
+            this.linkLabel7.Text = "WinPcap developed by contributors at WinPcap.org";
+            this.linkLabel7.UseCompatibleTextRendering = true;
+            this.linkLabel7.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel7_LinkClicked);
+            // 
+            // linkLabel5
+            // 
+            this.linkLabel5.AutoSize = true;
+            this.linkLabel5.LinkArea = new System.Windows.Forms.LinkArea(11, 16);
+            this.linkLabel5.Location = new System.Drawing.Point(157, 50);
+            this.linkLabel5.Name = "linkLabel5";
+            this.linkLabel5.Size = new System.Drawing.Size(87, 17);
+            this.linkLabel5.TabIndex = 12;
+            this.linkLabel5.TabStop = true;
+            this.linkLabel5.Text = ", based on jpcap";
+            this.linkLabel5.UseCompatibleTextRendering = true;
+            this.linkLabel5.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel5_LinkClicked);
+            // 
             // groupBox3
             // 
             this.groupBox3.Controls.Add(this.txtPlugins);
@@ -242,42 +278,6 @@ namespace Kopf.PacketPal
             this.txtEditors.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.txtEditors.Size = new System.Drawing.Size(474, 108);
             this.txtEditors.TabIndex = 0;
-            // 
-            // linkLabel7
-            // 
-            this.linkLabel7.AutoSize = true;
-            this.linkLabel7.LinkArea = new System.Windows.Forms.LinkArea(37, 48);
-            this.linkLabel7.Location = new System.Drawing.Point(9, 101);
-            this.linkLabel7.Name = "linkLabel7";
-            this.linkLabel7.Size = new System.Drawing.Size(263, 17);
-            this.linkLabel7.TabIndex = 14;
-            this.linkLabel7.TabStop = true;
-            this.linkLabel7.Text = "WinPcap developed by contributors at WinPcap.org";
-            this.linkLabel7.UseCompatibleTextRendering = true;
-            this.linkLabel7.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel7_LinkClicked);
-            // 
-            // linkLabel5
-            // 
-            this.linkLabel5.AutoSize = true;
-            this.linkLabel5.LinkArea = new System.Windows.Forms.LinkArea(11, 16);
-            this.linkLabel5.Location = new System.Drawing.Point(157, 50);
-            this.linkLabel5.Name = "linkLabel5";
-            this.linkLabel5.Size = new System.Drawing.Size(87, 17);
-            this.linkLabel5.TabIndex = 12;
-            this.linkLabel5.TabStop = true;
-            this.linkLabel5.Text = ", based on jpcap";
-            this.linkLabel5.UseCompatibleTextRendering = true;
-            this.linkLabel5.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.linkLabel5_LinkClicked);
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 67);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(412, 13);
-            this.label1.TabIndex = 15;
-            this.label1.Text = "SharpPcap Copyright (c) 2005 Tamir Gal, http://www.tamirgal.com, All rights reser" +
-                "ved.";
             // 
             // AboutForm
             // 

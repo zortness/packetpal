@@ -8,7 +8,7 @@ namespace Kopf.PacketPal
     {
         public static string getVersion()
         {
-            return "1.0.3";
+            return "1.2";
         }
     }
 }

@@ -37,6 +37,7 @@ namespace Kopf.PacketPal.PacketEditors
             this.label7 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label9 = new System.Windows.Forms.Label();
             this.checkBoxRecompute = new System.Windows.Forms.CheckBox();
             this.txtUrgent = new System.Windows.Forms.TextBox();
             this.txtChecksum = new System.Windows.Forms.TextBox();
@@ -59,6 +60,7 @@ namespace Kopf.PacketPal.PacketEditors
             this.txtData = new System.Windows.Forms.TextBox();
             this.btnCancel = new System.Windows.Forms.Button();
             this.btnSave = new System.Windows.Forms.Button();
+            this.txtReserved = new System.Windows.Forms.TextBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -103,7 +105,7 @@ namespace Kopf.PacketPal.PacketEditors
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(253, 22);
+            this.label5.Location = new System.Drawing.Point(6, 124);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(81, 13);
             this.label5.TabIndex = 4;
@@ -138,6 +140,8 @@ namespace Kopf.PacketPal.PacketEditors
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.txtReserved);
+            this.groupBox1.Controls.Add(this.label9);
             this.groupBox1.Controls.Add(this.checkBoxRecompute);
             this.groupBox1.Controls.Add(this.txtUrgent);
             this.groupBox1.Controls.Add(this.txtChecksum);
@@ -161,6 +165,15 @@ namespace Kopf.PacketPal.PacketEditors
             this.groupBox1.TabIndex = 8;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Header Fields";
+            // 
+            // label9
+            // 
+            this.label9.AutoSize = true;
+            this.label9.Location = new System.Drawing.Point(253, 22);
+            this.label9.Name = "label9";
+            this.label9.Size = new System.Drawing.Size(56, 13);
+            this.label9.TabIndex = 17;
+            this.label9.Text = "Reserved:";
             // 
             // checkBoxRecompute
             // 
@@ -198,7 +211,7 @@ namespace Kopf.PacketPal.PacketEditors
             // 
             // txtLen
             // 
-            this.txtLen.Location = new System.Drawing.Point(376, 19);
+            this.txtLen.Location = new System.Drawing.Point(129, 121);
             this.txtLen.Name = "txtLen";
             this.txtLen.Size = new System.Drawing.Size(100, 20);
             this.txtLen.TabIndex = 12;
@@ -244,8 +257,6 @@ namespace Kopf.PacketPal.PacketEditors
             this.groupBox2.Controls.Add(this.checkBoxPSH);
             this.groupBox2.Controls.Add(this.checkBoxACK);
             this.groupBox2.Controls.Add(this.checkBoxURG);
-            this.groupBox2.Controls.Add(this.checkBoxECN);
-            this.groupBox2.Controls.Add(this.checkBoxCWR);
             this.groupBox2.Location = new System.Drawing.Point(12, 166);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(486, 47);
@@ -316,22 +327,24 @@ namespace Kopf.PacketPal.PacketEditors
             // checkBoxECN
             // 
             this.checkBoxECN.AutoSize = true;
-            this.checkBoxECN.Location = new System.Drawing.Point(88, 19);
+            this.checkBoxECN.Location = new System.Drawing.Point(410, 208);
             this.checkBoxECN.Name = "checkBoxECN";
             this.checkBoxECN.Size = new System.Drawing.Size(48, 17);
             this.checkBoxECN.TabIndex = 1;
             this.checkBoxECN.Text = "ECN";
             this.checkBoxECN.UseVisualStyleBackColor = true;
+            this.checkBoxECN.Visible = false;
             // 
             // checkBoxCWR
             // 
             this.checkBoxCWR.AutoSize = true;
-            this.checkBoxCWR.Location = new System.Drawing.Point(30, 19);
+            this.checkBoxCWR.Location = new System.Drawing.Point(352, 208);
             this.checkBoxCWR.Name = "checkBoxCWR";
             this.checkBoxCWR.Size = new System.Drawing.Size(52, 17);
             this.checkBoxCWR.TabIndex = 0;
             this.checkBoxCWR.Text = "CWR";
             this.checkBoxCWR.UseVisualStyleBackColor = true;
+            this.checkBoxCWR.Visible = false;
             // 
             // groupBox3
             // 
@@ -372,6 +385,14 @@ namespace Kopf.PacketPal.PacketEditors
             this.btnSave.UseVisualStyleBackColor = true;
             this.btnSave.Click += new System.EventHandler(this.btnSave_Click);
             // 
+            // txtReserved
+            // 
+            this.txtReserved.Location = new System.Drawing.Point(376, 19);
+            this.txtReserved.Name = "txtReserved";
+            this.txtReserved.Size = new System.Drawing.Size(100, 20);
+            this.txtReserved.TabIndex = 18;
+            this.txtReserved.Leave += new System.EventHandler(this.verifyReserved);
+            // 
             // TCPEditorForm
             // 
             this.AcceptButton = this.btnSave;
@@ -384,6 +405,8 @@ namespace Kopf.PacketPal.PacketEditors
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.groupBox2);
             this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.checkBoxECN);
+            this.Controls.Add(this.checkBoxCWR);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
@@ -397,6 +420,7 @@ namespace Kopf.PacketPal.PacketEditors
             this.groupBox3.ResumeLayout(false);
             this.groupBox3.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -433,5 +457,7 @@ namespace Kopf.PacketPal.PacketEditors
         private System.Windows.Forms.Button btnSave;
         private System.Windows.Forms.TextBox txtData;
         private System.Windows.Forms.CheckBox checkBoxRecompute;
+        private System.Windows.Forms.Label label9;
+        private System.Windows.Forms.TextBox txtReserved;
     }
 }

@@ -6,7 +6,6 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
-
 namespace Kopf.PacketPal.PacketEditors
 {
     public partial class EthernetEditorForm : Form
@@ -16,10 +15,6 @@ namespace Kopf.PacketPal.PacketEditors
         private string mySource;
         private string myProtocol; // hex string
         private string myPayload;  // hex string
-
-        // if the payload is changed, we need to recompile the resulting fields
-        // from scratch
-        public bool reCompile;
 
         /*
          * Constructor.
@@ -42,7 +37,6 @@ namespace Kopf.PacketPal.PacketEditors
             txtSrc.Text = mySource;
             txtFrame.Text = myProtocol;
             txtPayloadHex.Text = myPayload;
-
         }
 
         /*
@@ -160,17 +154,6 @@ namespace Kopf.PacketPal.PacketEditors
 
         private void payloadChanged(object sender, EventArgs e)
         {
-            if (!(sender is TextBox))
-            {
-                return;
-            }
-
-            // button gets disabled when clicked
-            // we only want to flag for recompilation when its done by the user
-            if (btnUnlock.Enabled == false)
-            {
-                reCompile = true;
-            }
         }
 
         private void btnUnlock_Click(object sender, EventArgs e)
@@ -195,7 +178,6 @@ namespace Kopf.PacketPal.PacketEditors
         {
             // generate 1500 random bytes
             txtPayloadHex.Text = myParent.randomPayload();
-            reCompile = true;
         }
 
         private void btnCancel_Click(object sender, EventArgs e)

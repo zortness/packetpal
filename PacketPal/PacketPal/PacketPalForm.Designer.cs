@@ -43,6 +43,7 @@ namespace Kopf.PacketPal
             this.helpToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutPacketPalToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.tutorialsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.faqToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.listBoxCapture = new System.Windows.Forms.ListBox();
             this.contextMenuStripCapture = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.editAsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -96,7 +97,6 @@ namespace Kopf.PacketPal
             this.listBoxSendInterface = new System.Windows.Forms.ListBox();
             this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.faqToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip.SuspendLayout();
             this.contextMenuStripCapture.SuspendLayout();
             this.tabControlPackets.SuspendLayout();
@@ -136,14 +136,14 @@ namespace Kopf.PacketPal
             this.saveSendToolStripMenuItem,
             this.exitToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
-            this.fileToolStripMenuItem.Size = new System.Drawing.Size(35, 20);
+            this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
             // 
             // loadCaptureToolStripMenuItem
             // 
             this.loadCaptureToolStripMenuItem.Name = "loadCaptureToolStripMenuItem";
             this.loadCaptureToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.O)));
-            this.loadCaptureToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.loadCaptureToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
             this.loadCaptureToolStripMenuItem.Text = "Load Captured Packets";
             this.loadCaptureToolStripMenuItem.Click += new System.EventHandler(this.loadFileToCapture_Click);
             // 
@@ -152,7 +152,7 @@ namespace Kopf.PacketPal
             this.loadSendToolStripMenuItem.Name = "loadSendToolStripMenuItem";
             this.loadSendToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Alt)
                         | System.Windows.Forms.Keys.O)));
-            this.loadSendToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.loadSendToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
             this.loadSendToolStripMenuItem.Text = "Load Send Queue";
             this.loadSendToolStripMenuItem.Click += new System.EventHandler(this.loadFileToSend_Click);
             // 
@@ -160,7 +160,7 @@ namespace Kopf.PacketPal
             // 
             this.saveCaptureToolStripMenuItem.Name = "saveCaptureToolStripMenuItem";
             this.saveCaptureToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.S)));
-            this.saveCaptureToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.saveCaptureToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
             this.saveCaptureToolStripMenuItem.Text = "Save Captured Packets";
             this.saveCaptureToolStripMenuItem.Click += new System.EventHandler(this.saveCaptureToFile_Click);
             // 
@@ -169,7 +169,7 @@ namespace Kopf.PacketPal
             this.saveSendToolStripMenuItem.Name = "saveSendToolStripMenuItem";
             this.saveSendToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)(((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Alt)
                         | System.Windows.Forms.Keys.S)));
-            this.saveSendToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.saveSendToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
             this.saveSendToolStripMenuItem.Text = "Save Send Queue";
             this.saveSendToolStripMenuItem.Click += new System.EventHandler(this.saveSendToFile_Click);
             // 
@@ -177,21 +177,21 @@ namespace Kopf.PacketPal
             // 
             this.exitToolStripMenuItem.Name = "exitToolStripMenuItem";
             this.exitToolStripMenuItem.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.Q)));
-            this.exitToolStripMenuItem.Size = new System.Drawing.Size(225, 22);
+            this.exitToolStripMenuItem.Size = new System.Drawing.Size(238, 22);
             this.exitToolStripMenuItem.Text = "Exit";
             this.exitToolStripMenuItem.Click += new System.EventHandler(this.exitToolStripMenuItem_Click);
             // 
             // editToolStripMenuItem
             // 
             this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
+            this.editToolStripMenuItem.Size = new System.Drawing.Size(39, 20);
             this.editToolStripMenuItem.Text = "Edit";
             this.editToolStripMenuItem.DropDownOpening += new System.EventHandler(this.editMenuOpening);
             // 
             // newToolStripMenuItem
             // 
             this.newToolStripMenuItem.Name = "newToolStripMenuItem";
-            this.newToolStripMenuItem.Size = new System.Drawing.Size(40, 20);
+            this.newToolStripMenuItem.Size = new System.Drawing.Size(43, 20);
             this.newToolStripMenuItem.Text = "New";
             this.newToolStripMenuItem.DropDownOpening += new System.EventHandler(this.newMenuOpening);
             // 
@@ -200,13 +200,13 @@ namespace Kopf.PacketPal
             this.pluginsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.reloadToolStripMenuItem});
             this.pluginsToolStripMenuItem.Name = "pluginsToolStripMenuItem";
-            this.pluginsToolStripMenuItem.Size = new System.Drawing.Size(52, 20);
+            this.pluginsToolStripMenuItem.Size = new System.Drawing.Size(58, 20);
             this.pluginsToolStripMenuItem.Text = "Plugins";
             // 
             // reloadToolStripMenuItem
             // 
             this.reloadToolStripMenuItem.Name = "reloadToolStripMenuItem";
-            this.reloadToolStripMenuItem.Size = new System.Drawing.Size(143, 22);
+            this.reloadToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
             this.reloadToolStripMenuItem.Text = "Reload Plugins";
             // 
             // helpToolStripMenuItem
@@ -216,22 +216,29 @@ namespace Kopf.PacketPal
             this.tutorialsToolStripMenuItem,
             this.faqToolStripMenuItem});
             this.helpToolStripMenuItem.Name = "helpToolStripMenuItem";
-            this.helpToolStripMenuItem.Size = new System.Drawing.Size(40, 20);
+            this.helpToolStripMenuItem.Size = new System.Drawing.Size(44, 20);
             this.helpToolStripMenuItem.Text = "Help";
             // 
             // aboutPacketPalToolStripMenuItem
             // 
             this.aboutPacketPalToolStripMenuItem.Name = "aboutPacketPalToolStripMenuItem";
-            this.aboutPacketPalToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.aboutPacketPalToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.aboutPacketPalToolStripMenuItem.Text = "About Packet Pal";
             this.aboutPacketPalToolStripMenuItem.Click += new System.EventHandler(this.aboutToolStripMenuItem_Click);
             // 
             // tutorialsToolStripMenuItem
             // 
             this.tutorialsToolStripMenuItem.Name = "tutorialsToolStripMenuItem";
-            this.tutorialsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.tutorialsToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.tutorialsToolStripMenuItem.Text = "Tutorials";
             this.tutorialsToolStripMenuItem.Click += new System.EventHandler(this.tutorialsToolStripMenuItem_Click);
+            // 
+            // faqToolStripMenuItem
+            // 
+            this.faqToolStripMenuItem.Name = "faqToolStripMenuItem";
+            this.faqToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.faqToolStripMenuItem.Text = "F.A.Q.";
+            this.faqToolStripMenuItem.Click += new System.EventHandler(this.faqToolStripMenuItem_Click);
             // 
             // listBoxCapture
             // 
@@ -250,25 +257,25 @@ namespace Kopf.PacketPal
             this.addToSendQueueToolStripMenuItem,
             this.deleteToolStripMenuItem});
             this.contextMenuStripCapture.Name = "contextMenuStripCapture";
-            this.contextMenuStripCapture.Size = new System.Drawing.Size(169, 70);
+            this.contextMenuStripCapture.Size = new System.Drawing.Size(178, 70);
             this.contextMenuStripCapture.Opening += new System.ComponentModel.CancelEventHandler(this.capturedContextOpening);
             // 
             // editAsToolStripMenuItem
             // 
             this.editAsToolStripMenuItem.Name = "editAsToolStripMenuItem";
-            this.editAsToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
+            this.editAsToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.editAsToolStripMenuItem.Text = "Edit As";
             // 
             // addToSendQueueToolStripMenuItem
             // 
             this.addToSendQueueToolStripMenuItem.Name = "addToSendQueueToolStripMenuItem";
-            this.addToSendQueueToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
+            this.addToSendQueueToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.addToSendQueueToolStripMenuItem.Text = "Add to Send Queue";
             // 
             // deleteToolStripMenuItem
             // 
             this.deleteToolStripMenuItem.Name = "deleteToolStripMenuItem";
-            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(168, 22);
+            this.deleteToolStripMenuItem.Size = new System.Drawing.Size(177, 22);
             this.deleteToolStripMenuItem.Text = "Delete";
             // 
             // tabControlPackets
@@ -279,6 +286,7 @@ namespace Kopf.PacketPal
             this.tabControlPackets.Name = "tabControlPackets";
             this.tabControlPackets.SelectedIndex = 0;
             this.tabControlPackets.Size = new System.Drawing.Size(792, 418);
+            this.tabControlPackets.SizeMode = System.Windows.Forms.TabSizeMode.FillToRight;
             this.tabControlPackets.TabIndex = 2;
             // 
             // tabPageCapture
@@ -740,22 +748,16 @@ namespace Kopf.PacketPal
             this.saveFileDialog1.DefaultExt = "pcap";
             this.saveFileDialog1.Filter = "Pcap File|*.pcap|Cap File|*.cap|All Files|*.*";
             // 
-            // faqToolStripMenuItem
-            // 
-            this.faqToolStripMenuItem.Name = "faqToolStripMenuItem";
-            this.faqToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.faqToolStripMenuItem.Text = "F.A.Q.";
-            this.faqToolStripMenuItem.Click += new System.EventHandler(this.faqToolStripMenuItem_Click);
-            // 
             // PacketPalForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(792, 445);
+            this.ClientSize = new System.Drawing.Size(792, 465);
             this.Controls.Add(this.tabControlPackets);
             this.Controls.Add(this.menuStrip);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MainMenuStrip = this.menuStrip;
+            this.MinimumSize = new System.Drawing.Size(798, 493);
             this.Name = "PacketPalForm";
             this.Text = "PacketPal";
             this.menuStrip.ResumeLayout(false);
